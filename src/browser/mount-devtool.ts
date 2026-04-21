@@ -8,6 +8,7 @@ import type {
 } from '../shared/types'
 import { createOverlay } from './create-overlay'
 import { getProductionGuardDecision } from './production-guard'
+import { createStorageController } from './storage'
 
 function createInertHandle(): CssVarsDevtoolHandle {
   return {
@@ -81,6 +82,12 @@ export function mountCssVarsDevtool(options: CssVarsDevtoolOptions = {}): CssVar
     ownedSession = session
   }
 
+  const storage = createStorageController({
+    options,
+    session,
+    currentWindow: window
+  })
+
   function isInert(): boolean {
     return isDestroyedSession(session)
   }
@@ -89,7 +96,15 @@ export function mountCssVarsDevtool(options: CssVarsDevtoolOptions = {}): CssVar
     session,
     title: options.title,
     messages: pickBrowserMessages(options),
-    defaultOpen: options.defaultOpen === true
+    defaultOpen: options.defaultOpen === true,
+    storageEnabled: storage.enabled,
+    initialPanelPosition: storage.initialPanelPosition,
+    onCommit(reason, state) {
+      storage.persist(reason, state)
+    },
+    onClearPersisted() {
+      storage.clear()
+    }
   })
 
   return {
@@ -121,6 +136,8 @@ export function mountCssVarsDevtool(options: CssVarsDevtoolOptions = {}): CssVar
       if (destroyed || isInert()) {
         return
       }
+
+      storage.clear()
     },
 
     destroy() {
@@ -130,6 +147,7 @@ export function mountCssVarsDevtool(options: CssVarsDevtoolOptions = {}): CssVar
 
       destroyed = true
       overlay.destroy()
+      storage.destroy()
       ownedSession?.destroy()
     }
   }

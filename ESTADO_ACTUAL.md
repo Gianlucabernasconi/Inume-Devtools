@@ -284,13 +284,13 @@ Más concretamente:
 
 ## Fase 11 — Storage versionado del browser
 
-- [ ] storage opt-in
-- [ ] key versionada
-- [ ] tolerancia a storage corrupta
-- [ ] `clearPersisted()` real
-- [ ] persistencia de posición
+- [x] storage opt-in
+- [x] key versionada
+- [x] tolerancia a storage corrupta
+- [x] `clearPersisted()` real
+- [x] persistencia de posición
 
-**Estado de fase:** pendiente.
+**Estado de fase:** completada.
 
 ---
 
@@ -378,21 +378,21 @@ Más concretamente:
 
 La siguiente fase lógica del proyecto es:
 
-### **Fase 11 — Storage versionado del browser**
+### **Fase 12 — i18n mínimo**
 
 Motivo:
 
 - es la siguiente fase definida por la especificación
-- el overlay base ya existe y ya puede operar sobre la sesión real
-- el siguiente gap real es persistencia browser opt-in y manejo de storage
+- el storage browser ya existe y cubre el contrato base de persistencia
+- el siguiente gap real del overlay es cerrar `en`, `es` y `locale: 'auto'`
 
 Después de eso, la prioridad correcta sería:
 
-1. i18n
-2. copy/download restante
-3. smoke tests reales
-4. resto de integration samples
-5. docs
+1. copy/download restante
+2. smoke tests reales
+3. resto de integration samples
+4. docs
+5. `npm pack`
 
 ---
 

@@ -1,17 +1,23 @@
 import type { CssVarItem, CssVarsMessages, CssVarsSession } from '../shared/types'
 import { getOverlayStyles } from './styles'
+import type { PersistedPanelPosition } from './storage-schema'
 
 interface OverlayOptions {
   session: CssVarsSession
   title?: string
   messages?: Partial<CssVarsMessages>
   defaultOpen?: boolean
+  storageEnabled?: boolean
+  initialPanelPosition?: PersistedPanelPosition
+  onCommit?: (reason: 'change' | 'reset' | 'resetAll' | 'hide' | 'copyCss', state: { panelPosition?: PersistedPanelPosition }) => void
+  onClearPersisted?: () => void
 }
 
 interface OverlayController {
   show(): void
   hide(): void
   toggle(): void
+  getPanelPosition(): PersistedPanelPosition | undefined
   destroy(): void
 }
 
@@ -68,7 +74,7 @@ export function createOverlay(options: OverlayOptions): OverlayController {
   let search = ''
   let selectedName: string | undefined
   let statusText = 'Ready.'
-  let panelPosition: { left: number; top: number } | undefined
+  let panelPosition: PersistedPanelPosition | undefined = options.initialPanelPosition
   let dragState:
     | {
         offsetX: number
@@ -89,6 +95,7 @@ export function createOverlay(options: OverlayOptions): OverlayController {
   let emptyCopyElement: HTMLParagraphElement | undefined
   let statusElement: HTMLParagraphElement | undefined
   let copyCssButton: HTMLButtonElement | undefined
+  let clearPersistedButton: HTMLButtonElement | undefined
 
   const stopDrag = (): void => {
     dragState = undefined
@@ -328,6 +335,7 @@ export function createOverlay(options: OverlayOptions): OverlayController {
     try {
       await clipboard.writeText(session.exportCss())
       statusText = 'CSS copied to clipboard.'
+      options.onCommit?.('copyCss', { panelPosition })
     } catch {
       statusText = 'Clipboard copy failed.'
     }
@@ -431,6 +439,12 @@ export function createOverlay(options: OverlayOptions): OverlayController {
       statusText = `Updated ${selectedName}.`
       render()
     })
+    colorInput.addEventListener('change', () => {
+      options.onCommit?.('change', { panelPosition })
+    })
+    colorInput.addEventListener('blur', () => {
+      options.onCommit?.('change', { panelPosition })
+    })
 
     editorControls.append(colorInput)
 
@@ -449,6 +463,7 @@ export function createOverlay(options: OverlayOptions): OverlayController {
       session.resetVar(selectedName)
       statusText = `Reset ${selectedName}.`
       render()
+      options.onCommit?.('reset', { panelPosition })
     })
 
     resetAllButton = currentDocument.createElement('button')
@@ -459,6 +474,7 @@ export function createOverlay(options: OverlayOptions): OverlayController {
       session.resetAll()
       statusText = 'All variables were reset.'
       render()
+      options.onCommit?.('resetAll', { panelPosition })
     })
 
     actionButtons.append(resetButton, resetAllButton)
@@ -504,6 +520,18 @@ export function createOverlay(options: OverlayOptions): OverlayController {
       void handleCopyCss()
     })
 
+    clearPersistedButton = currentDocument.createElement('button')
+    clearPersistedButton.type = 'button'
+    clearPersistedButton.className = 'ghost-button'
+    clearPersistedButton.textContent = messages.clearPersisted
+    clearPersistedButton.hidden = !options.storageEnabled
+    clearPersistedButton.addEventListener('click', () => {
+      options.onClearPersisted?.()
+      statusText = 'Persisted state cleared.'
+      updateFooter()
+    })
+
+    footerActions.append(clearPersistedButton)
     footerActions.append(copyCssButton)
     footer.append(statusElement, footerActions)
 
@@ -530,6 +558,7 @@ export function createOverlay(options: OverlayOptions): OverlayController {
     visible = false
     statusText = 'Panel hidden.'
     render()
+    options.onCommit?.('hide', { panelPosition })
   }
 
   function toggle(): void {
@@ -568,6 +597,9 @@ export function createOverlay(options: OverlayOptions): OverlayController {
     show,
     hide,
     toggle,
+    getPanelPosition() {
+      return panelPosition
+    },
     destroy
   }
 }

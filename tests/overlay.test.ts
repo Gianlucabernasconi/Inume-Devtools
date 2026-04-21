@@ -111,4 +111,104 @@ describe('browser overlay', () => {
     handle.destroy()
     expect(document.querySelector('[data-inume-css-vars-devtool-root="true"]')).toBeNull()
   })
+
+  it('persiste cambios solo en commit valido y puede limpiar persisted state', async () => {
+    window.localStorage.clear()
+
+    const handle = mountCssVarsDevtool({
+      productionGuard: 'off',
+      defaultOpen: true,
+      storage: { kind: 'local', key: 'overlay-test' }
+    })
+
+    const { shadowRoot } = getOverlayParts()
+    const colorInput = shadowRoot.querySelector('.editor input[type="color"]') as HTMLInputElement
+    colorInput.value = '#223344'
+    colorInput.dispatchEvent(new Event('input', { bubbles: true }))
+
+    expect(window.localStorage.getItem('overlay-test')).toBeNull()
+
+    colorInput.dispatchEvent(new Event('change', { bubbles: true }))
+    await waitForStorageFlush()
+
+    expect(window.localStorage.getItem('overlay-test')).toContain('#223344')
+
+    handle.clearPersisted()
+    expect(window.localStorage.getItem('overlay-test')).toBeNull()
+
+    handle.hide()
+    await waitForStorageFlush()
+    expect(window.localStorage.getItem('overlay-test')).toBeNull()
+
+    handle.show()
+    colorInput.value = '#334455'
+    colorInput.dispatchEvent(new Event('input', { bubbles: true }))
+    colorInput.dispatchEvent(new Event('change', { bubbles: true }))
+    await waitForStorageFlush()
+
+    expect(window.localStorage.getItem('overlay-test')).toContain('#334455')
+  })
+
+  it('ignora storage corrupta y restaura estado valido cuando existe', () => {
+    window.localStorage.setItem('corrupt-storage', '{bad json')
+
+    const corruptHandle = mountCssVarsDevtool({
+      productionGuard: 'off',
+      defaultOpen: true,
+      storage: { kind: 'local', key: 'corrupt-storage' }
+    })
+
+    expect(document.documentElement.style.getPropertyValue('--color-base').trim()).toBe('#0f172a')
+    corruptHandle.destroy()
+
+    window.localStorage.setItem(
+      'valid-storage',
+      JSON.stringify({
+        version: 1,
+        vars: { '--color-base': '#102030' },
+        panelPosition: { left: 24, top: 36 }
+      })
+    )
+
+    const validHandle = mountCssVarsDevtool({
+      productionGuard: 'off',
+      defaultOpen: true,
+      storage: { kind: 'local', key: 'valid-storage' }
+    })
+    void validHandle
+
+    expect(document.documentElement.style.getPropertyValue('--color-base').trim()).toBe('#102030')
+    const { shadowRoot } = getOverlayParts()
+    const panel = shadowRoot.querySelector('.panel') as HTMLDivElement
+    expect(panel.style.left).toBe('24px')
+    expect(panel.style.top).toBe('36px')
+  })
+
+  it('exige storage.key explicita con match y para mounts multiples implicitos', () => {
+    expect(() => {
+      mountCssVarsDevtool({
+        productionGuard: 'off',
+        storage: { kind: 'local' },
+        match: (name) => name.includes('base')
+      })
+    }).toThrow('storage.key explícita')
+
+    const first = mountCssVarsDevtool({
+      productionGuard: 'off',
+      storage: { kind: 'local' }
+    })
+
+    expect(() => {
+      mountCssVarsDevtool({
+        productionGuard: 'off',
+        storage: { kind: 'local' }
+      })
+    }).toThrow('múltiples mounts persistentes')
+
+    first.destroy()
+  })
 })
+
+async function waitForStorageFlush(): Promise<void> {
+  await new Promise((resolve) => setTimeout(resolve, 60))
+}
