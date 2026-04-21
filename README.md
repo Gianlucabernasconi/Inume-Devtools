@@ -24,5 +24,6 @@ El repo ya incluye el scaffold inicial, el core headless de v1 y tests dirigidos
 - `setVar`, `resetVar`, `resetAll`
 - `exportCss()` y `exportJson()` filtrando valores exportables
 - entry `browser` exportado y SSR-safe al importarse
+- sample manual en `examples/vanilla`
 
 La UI overlay todavía no está implementada en esta primera iteración.

@@ -1,0 +1,91 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@inume/css-vars-devtools vanilla sample</title>
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <main class="app-shell">
+      <section class="hero-card">
+        <p class="eyebrow">Vanilla sample</p>
+        <h1>Manual validation for the headless core</h1>
+        <p class="intro">
+          This page uses runtime CSS vars on <code>:root</code> and edits them through
+          <code>createCssVarsSession()</code>.
+        </p>
+        <div class="hero-actions">
+          <button id="randomize-btn" type="button">Randomize palette</button>
+          <button id="reset-all-btn" type="button" class="secondary">Reset all</button>
+        </div>
+      </section>
+
+      <section class="preview-grid" aria-label="Preview surfaces">
+        <article class="preview-card accent-card">
+          <p class="card-kicker">Primary preview</p>
+          <h2>Interactive runtime palette</h2>
+          <p>
+            Changes are applied inline on <code>document.documentElement</code> and exported
+            from session memory.
+          </p>
+          <button type="button" class="accent-button">Accent action</button>
+        </article>
+
+        <article class="preview-card surface-card">
+          <p class="card-kicker">Surface preview</p>
+          <h2>Readable contrast check</h2>
+          <p>
+            Use this card to validate surface and text combinations while updating the vars.
+          </p>
+        </article>
+      </section>
+
+      <section class="panel-grid">
+        <article class="panel">
+          <div class="panel-header">
+            <div>
+              <p class="panel-kicker">Core controls</p>
+              <h2>Editable variables</h2>
+            </div>
+            <button id="refresh-btn" type="button" class="ghost">Refresh list</button>
+          </div>
+
+          <div id="controls" class="control-list"></div>
+        </article>
+
+        <article class="panel">
+          <div class="panel-header">
+            <div>
+              <p class="panel-kicker">Runtime exports</p>
+              <h2>Session output</h2>
+            </div>
+          </div>
+
+          <div class="status-stack">
+            <p id="browser-status" class="status-pill">Browser entry not loaded</p>
+            <p id="session-status" class="status-copy">Session ready.</p>
+          </div>
+
+          <div class="export-block">
+            <div class="export-header">
+              <h3>CSS</h3>
+              <button id="copy-css-btn" type="button" class="ghost">Copy block</button>
+            </div>
+            <pre id="css-output"></pre>
+          </div>
+
+          <div class="export-block">
+            <div class="export-header">
+              <h3>JSON</h3>
+              <button id="copy-json-btn" type="button" class="ghost">Copy block</button>
+            </div>
+            <pre id="json-output"></pre>
+          </div>
+        </article>
+      </section>
+    </main>
+
+    <script type="module" src="./app.js"></script>
+  </body>
+</html>
