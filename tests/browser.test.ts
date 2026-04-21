@@ -5,7 +5,7 @@ import { mountCssVarsDevtool } from '../src/browser'
 import * as productionGuard from '../src/browser/production-guard'
 
 function setupDocument(): Document {
-  document.documentElement.replaceChildren()
+  document.body.replaceChildren()
   document.documentElement.style.cssText = ''
   document.documentElement.style.setProperty('--color-base', '#ffffff')
   document.documentElement.style.setProperty('--color-primary', '#111111')

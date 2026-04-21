@@ -121,7 +121,10 @@ Más concretamente:
 - import SSR-safe e inert al importarse
 - `mountCssVarsDevtool()` existe
 - `productionGuard` base existe
-- **overlay visual todavía no existe**
+- overlay real con Shadow DOM
+- botón flotante + panel draggable
+- editor de variable activa, buscador y lista scrollable
+- acción visible `Copy CSS` con feedback mínimo
 
 #### Sample manual implementado
 
@@ -264,18 +267,18 @@ Más concretamente:
 
 ## Fase 10 — Overlay browser
 
-- [ ] botón flotante
-- [ ] panel flotante
-- [ ] Shadow DOM
-- [ ] header draggable
-- [ ] buscador
-- [ ] lista scrollable
-- [ ] editor de variable activa
-- [ ] `Reset`
-- [ ] `Reset all`
-- [ ] feedback visual mínimo
+- [x] botón flotante
+- [x] panel flotante
+- [x] Shadow DOM
+- [x] header draggable
+- [x] buscador
+- [x] lista scrollable
+- [x] editor de variable activa
+- [x] `Reset`
+- [x] `Reset all`
+- [x] feedback visual mínimo
 
-**Estado de fase:** pendiente.
+**Estado de fase:** completada.
 
 ---
 
@@ -304,14 +307,14 @@ Más concretamente:
 
 ## Fase 13 — Downloads / copy
 
-- [ ] `Copy CSS` real
+- [x] `Copy CSS` real
 - [ ] `Copy JSON` real
 - [ ] `Download CSS` real
 - [ ] `Download JSON` real
 - [ ] sanitización de filenames
 - [ ] solo bajo gesto explícito
 
-**Estado de fase:** pendiente.
+**Estado de fase:** parcial.
 
 ---
 
@@ -375,18 +378,18 @@ Más concretamente:
 
 La siguiente fase lógica del proyecto es:
 
-### **Fase 10 — Overlay browser**
+### **Fase 11 — Storage versionado del browser**
 
 Motivo:
 
 - es la siguiente fase definida por la especificación
-- `productionGuard` ya quedó cubierto en sus tres modos
-- el siguiente gap real del producto es la UI browser con Shadow DOM
+- el overlay base ya existe y ya puede operar sobre la sesión real
+- el siguiente gap real es persistencia browser opt-in y manejo de storage
 
 Después de eso, la prioridad correcta sería:
 
-1. storage + i18n
-2. copy/download
+1. i18n
+2. copy/download restante
 3. smoke tests reales
 4. resto de integration samples
 5. docs

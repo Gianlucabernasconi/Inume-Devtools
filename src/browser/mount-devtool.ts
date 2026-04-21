@@ -1,10 +1,12 @@
 import { createCssVarsSession } from '../core/create-session'
 import type {
   CssVarsDevtoolHandle,
+  CssVarsMessages,
   CssVarsDevtoolOptions,
   CssVarsSession,
   CssVarsSessionOptions
 } from '../shared/types'
+import { createOverlay } from './create-overlay'
 import { getProductionGuardDecision } from './production-guard'
 
 function createInertHandle(): CssVarsDevtoolHandle {
@@ -15,6 +17,10 @@ function createInertHandle(): CssVarsDevtoolHandle {
     clearPersisted() {},
     destroy() {}
   }
+}
+
+function pickBrowserMessages(options: CssVarsDevtoolOptions): Partial<CssVarsMessages> | undefined {
+  return options.messages
 }
 
 function isDestroyedSession(session: CssVarsSession): boolean {
@@ -68,7 +74,6 @@ export function mountCssVarsDevtool(options: CssVarsDevtoolOptions = {}): CssVar
   }
 
   let destroyed = false
-  let visible = options.defaultOpen === true
   let ownedSession: CssVarsSession | undefined
   const session = 'session' in options && options.session ? options.session : createCssVarsSession(pickSessionOptions(options))
 
@@ -80,13 +85,20 @@ export function mountCssVarsDevtool(options: CssVarsDevtoolOptions = {}): CssVar
     return isDestroyedSession(session)
   }
 
+  const overlay = createOverlay({
+    session,
+    title: options.title,
+    messages: pickBrowserMessages(options),
+    defaultOpen: options.defaultOpen === true
+  })
+
   return {
     show() {
       if (destroyed || isInert()) {
         return
       }
 
-      visible = true
+      overlay.show()
     },
 
     hide() {
@@ -94,7 +106,7 @@ export function mountCssVarsDevtool(options: CssVarsDevtoolOptions = {}): CssVar
         return
       }
 
-      visible = false
+      overlay.hide()
     },
 
     toggle() {
@@ -102,15 +114,13 @@ export function mountCssVarsDevtool(options: CssVarsDevtoolOptions = {}): CssVar
         return
       }
 
-      visible = !visible
+      overlay.toggle()
     },
 
     clearPersisted() {
       if (destroyed || isInert()) {
         return
       }
-
-      void visible
     },
 
     destroy() {
@@ -119,7 +129,7 @@ export function mountCssVarsDevtool(options: CssVarsDevtoolOptions = {}): CssVar
       }
 
       destroyed = true
-      visible = false
+      overlay.destroy()
       ownedSession?.destroy()
     }
   }
