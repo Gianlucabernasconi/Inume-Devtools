@@ -1,0 +1,12 @@
+export const DEFAULT_PREFIXES = ['--color-'] as const
+
+export const EXPORT_SCHEMA_VERSION = 1
+
+export const SESSION_OPTION_KEYS = [
+  'target',
+  'prefixes',
+  'include',
+  'exclude',
+  'match',
+  'allowRaw'
+] as const
