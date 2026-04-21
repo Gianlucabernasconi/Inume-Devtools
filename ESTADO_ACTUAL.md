@@ -252,13 +252,13 @@ Más concretamente:
 
 ## Fase 9 — Production guard
 
-- [-] implementación base existente
-- [ ] cubrir explícitamente `strict`
-- [ ] cubrir explícitamente `warn`
-- [ ] cubrir explícitamente `off`
-- [ ] tests del contrato inert del handle
+- [x] implementación base existente
+- [x] cubrir explícitamente `strict`
+- [x] cubrir explícitamente `warn`
+- [x] cubrir explícitamente `off`
+- [x] tests del contrato inert del handle
 
-**Estado de fase:** parcial.
+**Estado de fase:** completada.
 
 ---
 
@@ -375,21 +375,21 @@ Más concretamente:
 
 La siguiente fase lógica del proyecto es:
 
-### **Fase 9 — Production guard**
+### **Fase 10 — Overlay browser**
 
 Motivo:
 
 - es la siguiente fase definida por la especificación
-- el sample `vanilla` ya existe y permite validar el paso anterior
-- antes de construir el overlay real conviene cerrar bien el contrato `strict` / `warn` / `off`
+- `productionGuard` ya quedó cubierto en sus tres modos
+- el siguiente gap real del producto es la UI browser con Shadow DOM
 
 Después de eso, la prioridad correcta sería:
 
-1. implementar overlay browser real
-2. storage + i18n
-3. copy/download
-4. smoke tests reales
-5. resto de integration samples
+1. storage + i18n
+2. copy/download
+3. smoke tests reales
+4. resto de integration samples
+5. docs
 
 ---
 

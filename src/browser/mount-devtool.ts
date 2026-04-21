@@ -5,7 +5,7 @@ import type {
   CssVarsSession,
   CssVarsSessionOptions
 } from '../shared/types'
-import { shouldBlockInCurrentEnvironment } from './production-guard'
+import { getProductionGuardDecision } from './production-guard'
 
 function createInertHandle(): CssVarsDevtoolHandle {
   return {
@@ -15,6 +15,10 @@ function createInertHandle(): CssVarsDevtoolHandle {
     clearPersisted() {},
     destroy() {}
   }
+}
+
+function isDestroyedSession(session: CssVarsSession): boolean {
+  return session.exportCss() === '' && session.exportJson() === ''
 }
 
 function hasSessionOptionMix(options: CssVarsDevtoolOptions): boolean {
@@ -50,8 +54,17 @@ export function mountCssVarsDevtool(options: CssVarsDevtoolOptions = {}): CssVar
     throw new Error('mountCssVarsDevtool() no permite mezclar session con opciones de sesión.')
   }
 
-  if (shouldBlockInCurrentEnvironment(options.productionGuard ?? 'strict')) {
+  const decision = getProductionGuardDecision(
+    options.productionGuard ?? 'strict',
+    typeof window === 'undefined' ? undefined : window
+  )
+
+  if (decision.blocked) {
     return createInertHandle()
+  }
+
+  if (decision.shouldWarn && decision.warningMessage) {
+    console.warn(decision.warningMessage)
   }
 
   let destroyed = false
@@ -63,9 +76,13 @@ export function mountCssVarsDevtool(options: CssVarsDevtoolOptions = {}): CssVar
     ownedSession = session
   }
 
+  function isInert(): boolean {
+    return isDestroyedSession(session)
+  }
+
   return {
     show() {
-      if (destroyed) {
+      if (destroyed || isInert()) {
         return
       }
 
@@ -73,7 +90,7 @@ export function mountCssVarsDevtool(options: CssVarsDevtoolOptions = {}): CssVar
     },
 
     hide() {
-      if (destroyed) {
+      if (destroyed || isInert()) {
         return
       }
 
@@ -81,7 +98,7 @@ export function mountCssVarsDevtool(options: CssVarsDevtoolOptions = {}): CssVar
     },
 
     toggle() {
-      if (destroyed) {
+      if (destroyed || isInert()) {
         return
       }
 
@@ -89,7 +106,7 @@ export function mountCssVarsDevtool(options: CssVarsDevtoolOptions = {}): CssVar
     },
 
     clearPersisted() {
-      if (destroyed) {
+      if (destroyed || isInert()) {
         return
       }
 
