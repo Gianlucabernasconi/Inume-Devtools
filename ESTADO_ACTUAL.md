@@ -308,13 +308,13 @@ Más concretamente:
 ## Fase 13 — Downloads / copy
 
 - [x] `Copy CSS` real
-- [ ] `Copy JSON` real
-- [ ] `Download CSS` real
-- [ ] `Download JSON` real
-- [ ] sanitización de filenames
-- [ ] solo bajo gesto explícito
+- [x] `Copy JSON` real
+- [x] `Download CSS` real
+- [x] `Download JSON` real
+- [x] sanitización de filenames
+- [x] solo bajo gesto explícito
 
-**Estado de fase:** parcial.
+**Estado de fase:** completada.
 
 ---
 
@@ -378,21 +378,21 @@ Más concretamente:
 
 La siguiente fase lógica del proyecto es:
 
-### **Fase 13 — Downloads / copy**
+### **Fase 14 — Smoke tests reales de navegador**
 
 Motivo:
 
 - es la siguiente fase definida por la especificación
-- el i18n base ya resuelve `en`, `es` y `auto`
-- el siguiente gap real visible es cerrar el resto del contrato de copy/download
+- copy/download ya cubre el contrato base del overlay
+- el siguiente gap real es validarlo en navegador real con Playwright
 
 Después de eso, la prioridad correcta sería:
 
-1. smoke tests reales
-2. resto de integration samples
-3. docs
-4. `npm pack`
-5. publicación
+1. resto de integration samples
+2. docs
+3. `npm pack`
+4. publicación
+5. hardening final
 
 ---
 

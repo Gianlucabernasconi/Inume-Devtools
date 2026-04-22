@@ -285,6 +285,37 @@ export function getOverlayStyles(): string {
       align-items: center;
       gap: 8px;
       margin-left: auto;
+      position: relative;
+    }
+
+    .menu-button {
+      min-width: 40px;
+      padding-inline: 0;
+      font-size: 18px;
+      line-height: 1;
+    }
+
+    .action-menu {
+      position: absolute;
+      right: 0;
+      bottom: calc(100% + 8px);
+      display: grid;
+      gap: 6px;
+      min-width: 180px;
+      padding: 8px;
+      border: 1px solid rgb(255 255 255 / 0.08);
+      border-radius: 14px;
+      background: rgb(15 23 42 / 0.96);
+      box-shadow: 0 20px 40px rgb(2 6 23 / 0.38);
+    }
+
+    .action-menu[hidden] {
+      display: none;
+    }
+
+    .action-menu .ghost-button {
+      justify-content: flex-start;
+      text-align: left;
     }
 
     .close-button {

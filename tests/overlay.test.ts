@@ -104,6 +104,59 @@ describe('browser overlay', () => {
     expect(writeText.mock.calls[0]?.[0]).toContain('--color-base')
   })
 
+  it('copy json y downloads solo ocurren bajo click explicito', async () => {
+    const writeText = vi.fn().mockResolvedValue(undefined)
+    const createObjectUrl = vi.fn().mockReturnValue('blob:mock')
+    const revokeObjectUrl = vi.fn()
+    const clickSpy = vi.spyOn(HTMLAnchorElement.prototype, 'click').mockImplementation(() => {})
+
+    Object.defineProperty(window.navigator, 'clipboard', {
+      configurable: true,
+      value: { writeText }
+    })
+
+    Object.defineProperty(window, 'URL', {
+      configurable: true,
+      value: {
+        createObjectURL: createObjectUrl,
+        revokeObjectURL: revokeObjectUrl
+      }
+    })
+
+    mountCssVarsDevtool({ productionGuard: 'off', defaultOpen: true, title: 'Unsafe / Title ???' })
+
+    expect(writeText).not.toHaveBeenCalled()
+    expect(createObjectUrl).not.toHaveBeenCalled()
+    expect(clickSpy).not.toHaveBeenCalled()
+
+    const { shadowRoot } = getOverlayParts()
+    const menuButton = shadowRoot.querySelector('.menu-button') as HTMLButtonElement
+    menuButton.click()
+
+    const actionButtons = Array.from(shadowRoot.querySelectorAll('.action-menu .ghost-button')) as HTMLButtonElement[]
+    const copyJsonButton = actionButtons.find((button) => button.textContent === 'Copy JSON') as HTMLButtonElement
+    const downloadCssButton = actionButtons.find((button) => button.textContent === 'Download CSS') as HTMLButtonElement
+    const downloadJsonButton = actionButtons.find((button) => button.textContent === 'Download JSON') as HTMLButtonElement
+
+    copyJsonButton.click()
+    await Promise.resolve()
+    expect(writeText).toHaveBeenCalledTimes(1)
+    expect(writeText.mock.calls[0]?.[0]).toContain('"version": 1')
+
+    menuButton.click()
+    downloadCssButton.click()
+    expect(createObjectUrl).toHaveBeenCalledTimes(1)
+    expect(clickSpy).toHaveBeenCalledTimes(1)
+
+    const cssAnchor = document.body.querySelector('a[download="unsafe-title.css"]')
+    expect(cssAnchor).toBeNull()
+
+    menuButton.click()
+    downloadJsonButton.click()
+    expect(createObjectUrl).toHaveBeenCalledTimes(2)
+    expect(clickSpy).toHaveBeenCalledTimes(2)
+  })
+
   it('destroy desmonta el overlay del documento', () => {
     const handle = mountCssVarsDevtool({ productionGuard: 'off', defaultOpen: true })
 

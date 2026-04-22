@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { createCssVarsSession } from '../src'
 import { mountCssVarsDevtool } from '../src/browser'
+import { sanitizeDownloadFilename } from '../src/browser/download'
 import { resolveLocale, resolveMessages } from '../src/browser/i18n'
 import * as productionGuard from '../src/browser/production-guard'
 
@@ -129,6 +130,12 @@ describe('productionGuard', () => {
       copyCss: 'Copiar bloque',
       resetAll: 'Resetear todo'
     })
+  })
+
+  it('sanea filenames de descarga con fallback estable', () => {
+    expect(sanitizeDownloadFilename('My Overlay Title!!!', 'css')).toBe('my-overlay-title.css')
+    expect(sanitizeDownloadFilename('../../???', 'json')).toBe('css-vars-devtools-export.json')
+    expect(sanitizeDownloadFilename('A'.repeat(80), 'css')).toBe(`${'a'.repeat(48)}.css`)
   })
 })
 

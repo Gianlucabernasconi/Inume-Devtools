@@ -1,4 +1,5 @@
 import type { CssVarItem, CssVarsMessages, CssVarsSession } from '../shared/types'
+import { triggerDownload } from './download'
 import { getOverlayStyles } from './styles'
 import type { PersistedPanelPosition } from './storage-schema'
 
@@ -77,7 +78,13 @@ export function createOverlay(options: OverlayOptions): OverlayController {
   let emptyCopyElement: HTMLParagraphElement | undefined
   let statusElement: HTMLParagraphElement | undefined
   let copyCssButton: HTMLButtonElement | undefined
+  let copyJsonButton: HTMLButtonElement | undefined
   let clearPersistedButton: HTMLButtonElement | undefined
+  let downloadCssButton: HTMLButtonElement | undefined
+  let downloadJsonButton: HTMLButtonElement | undefined
+  let menuButton: HTMLButtonElement | undefined
+  let actionMenu: HTMLDivElement | undefined
+  let menuOpen = false
 
   const stopDrag = (): void => {
     dragState = undefined
@@ -206,6 +213,14 @@ export function createOverlay(options: OverlayOptions): OverlayController {
     }
 
     statusElement.textContent = statusText
+
+    if (menuButton) {
+      menuButton.setAttribute('aria-expanded', String(menuOpen))
+    }
+
+    if (actionMenu) {
+      actionMenu.hidden = !menuOpen
+    }
   }
 
   function updateEditor(selectedItem: CssVarItem | undefined): void {
@@ -322,6 +337,60 @@ export function createOverlay(options: OverlayOptions): OverlayController {
       statusText = 'Clipboard copy failed.'
     }
 
+    updateFooter()
+  }
+
+  async function handleCopyJson(): Promise<void> {
+    if (destroyed || isSessionInert()) {
+      return
+    }
+
+    const clipboard = currentWindow.navigator.clipboard
+    if (!clipboard?.writeText) {
+      statusText = 'Clipboard API is not available.'
+      updateFooter()
+      return
+    }
+
+    try {
+      await clipboard.writeText(session.exportJson())
+      statusText = 'JSON copied to clipboard.'
+    } catch {
+      statusText = 'Clipboard copy failed.'
+    }
+
+    closeActionMenu()
+    updateFooter()
+  }
+
+  function handleDownload(extension: 'css' | 'json'): void {
+    if (destroyed || isSessionInert()) {
+      return
+    }
+
+    const content = extension === 'css' ? session.exportCss() : session.exportJson()
+
+    triggerDownload({
+      content,
+      baseName: title,
+      extension,
+      mimeType: extension === 'css' ? 'text/css;charset=utf-8' : 'application/json;charset=utf-8',
+      currentWindow,
+      currentDocument
+    })
+
+    statusText = extension === 'css' ? 'CSS download started.' : 'JSON download started.'
+    closeActionMenu()
+    updateFooter()
+  }
+
+  function closeActionMenu(): void {
+    menuOpen = false
+    updateFooter()
+  }
+
+  function toggleActionMenu(): void {
+    menuOpen = !menuOpen
     updateFooter()
   }
 
@@ -494,6 +563,44 @@ export function createOverlay(options: OverlayOptions): OverlayController {
     const footerActions = currentDocument.createElement('div')
     footerActions.className = 'footer-actions'
 
+    menuButton = currentDocument.createElement('button')
+    menuButton.type = 'button'
+    menuButton.className = 'ghost-button menu-button'
+    menuButton.dataset.noDrag = 'true'
+    menuButton.textContent = '⋯'
+    menuButton.setAttribute('aria-label', 'More actions')
+    menuButton.addEventListener('click', () => {
+      toggleActionMenu()
+    })
+
+    actionMenu = currentDocument.createElement('div')
+    actionMenu.className = 'action-menu'
+    actionMenu.hidden = true
+
+    copyJsonButton = currentDocument.createElement('button')
+    copyJsonButton.type = 'button'
+    copyJsonButton.className = 'ghost-button'
+    copyJsonButton.textContent = messages.copyJson
+    copyJsonButton.addEventListener('click', () => {
+      void handleCopyJson()
+    })
+
+    downloadCssButton = currentDocument.createElement('button')
+    downloadCssButton.type = 'button'
+    downloadCssButton.className = 'ghost-button'
+    downloadCssButton.textContent = messages.downloadCss
+    downloadCssButton.addEventListener('click', () => {
+      handleDownload('css')
+    })
+
+    downloadJsonButton = currentDocument.createElement('button')
+    downloadJsonButton.type = 'button'
+    downloadJsonButton.className = 'ghost-button'
+    downloadJsonButton.textContent = messages.downloadJson
+    downloadJsonButton.addEventListener('click', () => {
+      handleDownload('json')
+    })
+
     copyCssButton = currentDocument.createElement('button')
     copyCssButton.type = 'button'
     copyCssButton.className = 'primary-button'
@@ -510,10 +617,12 @@ export function createOverlay(options: OverlayOptions): OverlayController {
     clearPersistedButton.addEventListener('click', () => {
       options.onClearPersisted?.()
       statusText = 'Persisted state cleared.'
+      closeActionMenu()
       updateFooter()
     })
 
-    footerActions.append(clearPersistedButton)
+    actionMenu.append(copyJsonButton, downloadCssButton, downloadJsonButton, clearPersistedButton)
+    footerActions.append(actionMenu, menuButton)
     footerActions.append(copyCssButton)
     footer.append(statusElement, footerActions)
 
@@ -538,6 +647,7 @@ export function createOverlay(options: OverlayOptions): OverlayController {
     }
 
     visible = false
+    closeActionMenu()
     statusText = 'Panel hidden.'
     render()
     options.onCommit?.('hide', { panelPosition })
@@ -569,6 +679,22 @@ export function createOverlay(options: OverlayOptions): OverlayController {
 
   toggleButton.addEventListener('click', () => toggle())
   currentWindow.addEventListener('resize', handleResize)
+  currentWindow.addEventListener('pointerdown', (event) => {
+    if (!menuOpen || !actionMenu || !menuButton) {
+      return
+    }
+
+    const target = event.target
+    if (!(target instanceof Node)) {
+      return
+    }
+
+    if (actionMenu.contains(target) || menuButton.contains(target)) {
+      return
+    }
+
+    closeActionMenu()
+  })
   updateToggleButton()
 
   if (options.defaultOpen) {
