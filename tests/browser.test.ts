@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { createCssVarsSession } from '../src'
 import { mountCssVarsDevtool } from '../src/browser'
+import { resolveLocale, resolveMessages } from '../src/browser/i18n'
 import * as productionGuard from '../src/browser/production-guard'
 
 function setupDocument(): Document {
@@ -101,6 +102,32 @@ describe('productionGuard', () => {
     expect(productionGuard.getProductionGuardDecision('off', createWindowLike('https://example.com/app'))).toEqual({
       blocked: false,
       shouldWarn: false
+    })
+  })
+
+  it('locale auto resuelve por primary language y fallback a en', () => {
+    expect(resolveLocale('auto', { language: 'es-CL' } as Navigator)).toBe('es')
+    expect(resolveLocale('auto', { language: 'pt-BR' } as Navigator)).toBe('en')
+    expect(resolveLocale(undefined, undefined)).toBe('en')
+  })
+
+  it('messages custom pisan al diccionario del locale', () => {
+    expect(resolveMessages('es', undefined).searchPlaceholder).toBe('Buscar variable')
+    expect(resolveMessages('en', undefined).searchPlaceholder).toBe('Search variable')
+
+    expect(
+      resolveMessages(
+        'es',
+        {
+          searchPlaceholder: 'Filtro custom',
+          copyCss: 'Copiar bloque'
+        },
+        { language: 'en-US' } as Navigator
+      )
+    ).toMatchObject({
+      searchPlaceholder: 'Filtro custom',
+      copyCss: 'Copiar bloque',
+      resetAll: 'Resetear todo'
     })
   })
 })

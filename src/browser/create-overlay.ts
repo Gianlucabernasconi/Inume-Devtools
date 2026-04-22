@@ -5,7 +5,7 @@ import type { PersistedPanelPosition } from './storage-schema'
 interface OverlayOptions {
   session: CssVarsSession
   title?: string
-  messages?: Partial<CssVarsMessages>
+  messages: CssVarsMessages
   defaultOpen?: boolean
   storageEnabled?: boolean
   initialPanelPosition?: PersistedPanelPosition
@@ -19,24 +19,6 @@ interface OverlayController {
   toggle(): void
   getPanelPosition(): PersistedPanelPosition | undefined
   destroy(): void
-}
-
-const DEFAULT_MESSAGES: CssVarsMessages = {
-  title: 'CSS Vars Devtools',
-  searchPlaceholder: 'Buscar variable',
-  noResults: 'No hay variables visibles para este filtro.',
-  rawValue: 'Raw value',
-  alpha: 'Alpha',
-  reset: 'Reset',
-  resetAll: 'Reset all',
-  copyCss: 'Copy CSS',
-  copyJson: 'Copy JSON',
-  downloadCss: 'Download CSS',
-  downloadJson: 'Download JSON',
-  clearPersisted: 'Clear persisted',
-  devOnly: 'Dev only',
-  close: 'Close',
-  open: 'Open'
 }
 
 export function createOverlay(options: OverlayOptions): OverlayController {
@@ -66,7 +48,7 @@ export function createOverlay(options: OverlayOptions): OverlayController {
   shadowRoot.append(style, root)
   currentDocument.body.append(host)
 
-  const messages = { ...DEFAULT_MESSAGES, ...options.messages }
+  const messages = options.messages
   const title = options.title?.trim() || messages.title
 
   let destroyed = false

@@ -7,6 +7,7 @@ import type {
   CssVarsSessionOptions
 } from '../shared/types'
 import { createOverlay } from './create-overlay'
+import { resolveMessages } from './i18n'
 import { getProductionGuardDecision } from './production-guard'
 import { createStorageController } from './storage'
 
@@ -20,8 +21,8 @@ function createInertHandle(): CssVarsDevtoolHandle {
   }
 }
 
-function pickBrowserMessages(options: CssVarsDevtoolOptions): Partial<CssVarsMessages> | undefined {
-  return options.messages
+function pickBrowserMessages(options: CssVarsDevtoolOptions): CssVarsMessages {
+  return resolveMessages(options.locale, options.messages, typeof navigator === 'undefined' ? undefined : navigator)
 }
 
 function isDestroyedSession(session: CssVarsSession): boolean {

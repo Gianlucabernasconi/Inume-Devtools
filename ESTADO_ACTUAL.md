@@ -296,12 +296,12 @@ Más concretamente:
 
 ## Fase 12 — i18n mínimo
 
-- [ ] locale `en`
-- [ ] locale `es`
-- [ ] `locale: 'auto'`
-- [ ] precedencia `messages` custom → locale → fallback `en`
+- [x] locale `en`
+- [x] locale `es`
+- [x] `locale: 'auto'`
+- [x] precedencia `messages` custom → locale → fallback `en`
 
-**Estado de fase:** pendiente.
+**Estado de fase:** completada.
 
 ---
 
@@ -378,21 +378,21 @@ Más concretamente:
 
 La siguiente fase lógica del proyecto es:
 
-### **Fase 12 — i18n mínimo**
+### **Fase 13 — Downloads / copy**
 
 Motivo:
 
 - es la siguiente fase definida por la especificación
-- el storage browser ya existe y cubre el contrato base de persistencia
-- el siguiente gap real del overlay es cerrar `en`, `es` y `locale: 'auto'`
+- el i18n base ya resuelve `en`, `es` y `auto`
+- el siguiente gap real visible es cerrar el resto del contrato de copy/download
 
 Después de eso, la prioridad correcta sería:
 
-1. copy/download restante
-2. smoke tests reales
-3. resto de integration samples
-4. docs
-5. `npm pack`
+1. smoke tests reales
+2. resto de integration samples
+3. docs
+4. `npm pack`
+5. publicación
 
 ---
 
