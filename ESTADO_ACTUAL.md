@@ -320,12 +320,12 @@ Más concretamente:
 
 ## Fase 14 — Smoke tests reales de navegador
 
-- [ ] smoke test de discovery
-- [ ] smoke test de copy
-- [ ] smoke test de download
-- [ ] smoke test de overlay básico
+- [x] smoke test de discovery
+- [x] smoke test de copy
+- [x] smoke test de download
+- [x] smoke test de overlay básico
 
-**Estado de fase:** pendiente.
+**Estado de fase:** completada.
 
 ---
 
@@ -378,21 +378,21 @@ Más concretamente:
 
 La siguiente fase lógica del proyecto es:
 
-### **Fase 14 — Smoke tests reales de navegador**
+### **Fase 15 — Resto de integration samples**
 
 Motivo:
 
 - es la siguiente fase definida por la especificación
-- copy/download ya cubre el contrato base del overlay
-- el siguiente gap real es validarlo en navegador real con Playwright
+- los smoke tests reales con Playwright ya validan discovery, copy, download y overlay básico
+- el siguiente gap real es cerrar los samples de integración restantes
 
 Después de eso, la prioridad correcta sería:
 
-1. resto de integration samples
-2. docs
-3. `npm pack`
-4. publicación
-5. hardening final
+1. docs
+2. `npm pack`
+3. publicación
+4. hardening final
+5. release checklist
 
 ---
 

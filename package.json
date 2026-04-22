@@ -30,6 +30,7 @@
     "build": "tsup",
     "test": "vitest run",
     "test:watch": "vitest",
+    "test:smoke": "npm run build && node tests/smoke/run-smoke.mjs",
     "check": "tsc --noEmit",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix"

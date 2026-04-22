@@ -26,6 +26,23 @@ const jsonOutput = document.querySelector('#json-output')
 const sessionStatus = document.querySelector('#session-status')
 const browserStatus = document.querySelector('#browser-status')
 
+function downloadText(content, filename, mimeType) {
+  const url = URL.createObjectURL(new Blob([content], { type: mimeType }))
+  const anchor = document.createElement('a')
+
+  anchor.href = url
+  anchor.download = filename
+  anchor.style.display = 'none'
+
+  document.body.append(anchor)
+  anchor.click()
+  anchor.remove()
+
+  setTimeout(() => {
+    URL.revokeObjectURL(url)
+  }, 0)
+}
+
 function randomHexColor() {
   return `#${Math.floor(Math.random() * 0xffffff)
     .toString(16)
@@ -155,6 +172,16 @@ document.querySelector('#copy-json-btn')?.addEventListener('click', async () => 
   } catch (error) {
     sessionStatus.textContent = `Clipboard failed: ${error.message}`
   }
+})
+
+document.querySelector('#download-css-btn')?.addEventListener('click', () => {
+  downloadText(session.exportCss(), 'vanilla-sample.css', 'text/css;charset=utf-8')
+  sessionStatus.textContent = 'Started CSS download.'
+})
+
+document.querySelector('#download-json-btn')?.addEventListener('click', () => {
+  downloadText(session.exportJson(), 'vanilla-sample.json', 'application/json;charset=utf-8')
+  sessionStatus.textContent = 'Started JSON download.'
 })
 
 refreshControls()

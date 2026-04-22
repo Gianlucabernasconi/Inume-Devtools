@@ -78,7 +78,8 @@ h1 {
 .panel-grid,
 .preview-grid,
 .panel-header,
-.export-header {
+.export-header,
+.export-actions {
   display: flex;
   gap: 12px;
 }
@@ -138,6 +139,15 @@ button.ghost {
 .panel-header {
   align-items: center;
   justify-content: space-between;
+}
+
+.export-header {
+  align-items: center;
+  justify-content: space-between;
+}
+
+.export-actions {
+  flex-wrap: wrap;
 }
 
 .control-list {
