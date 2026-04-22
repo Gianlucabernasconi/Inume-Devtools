@@ -1,6 +1,7 @@
 import { shouldIncludeName, resolveFilters } from './filters'
 import { normalizeCustomPropertyName } from '../shared/normalize-name'
 import { normalizeColorValue } from '../shared/normalize-color'
+import { validateExportableValue } from '../shared/validate-exportable-value'
 import type { CssVarsSessionOptions } from '../shared/types'
 
 function resolveTargetDocument(target?: Document): Document {
@@ -40,13 +41,21 @@ export function discoverVars(options: CssVarsSessionOptions = {}): DiscoveryResu
   try {
     for (let index = 0; index < computedStyle.length; index += 1) {
       const rawName = computedStyle.item(index)
-      const name = normalizeCustomPropertyName(rawName)
 
-      if (!name || !shouldIncludeName(name, filters)) {
+      // Only real custom properties belong to the session scope.
+      if (!rawName.trim().startsWith('--')) {
         continue
       }
 
-      baseline.set(name, normalizeColorValue(computedStyle.getPropertyValue(name)))
+      const name = normalizeCustomPropertyName(rawName)
+      const runtimeValue = normalizeColorValue(computedStyle.getPropertyValue(rawName))
+      const validation = validateExportableValue(runtimeValue)
+
+      if (!name || !validation.editableAsColor || !shouldIncludeName(name, filters)) {
+        continue
+      }
+
+      baseline.set(name, validation.normalizedValue)
     }
   } catch (error) {
     if (error instanceof Error) {

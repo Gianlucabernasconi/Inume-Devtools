@@ -69,7 +69,7 @@ export function getOverlayStyles(): string {
       top: 16px;
       right: 16px;
       width: min(360px, calc(100vw - 24px));
-      max-height: 70vh;
+      height: min(70vh, calc(100vh - 24px));
       display: grid;
       grid-template-rows: auto auto auto minmax(0, 1fr) auto;
       border: 1px solid rgb(255 255 255 / 0.08);
@@ -151,7 +151,12 @@ export function getOverlayStyles(): string {
 
     .editor {
       display: grid;
-      gap: 12px;
+      gap: 10px;
+    }
+
+    .picker-inline {
+      display: grid;
+      gap: 8px;
     }
 
     .editor-top,
@@ -197,20 +202,63 @@ export function getOverlayStyles(): string {
     .editor-controls {
       display: flex;
       align-items: center;
-      gap: 10px;
+      gap: 8px;
+      flex: 1;
+      min-width: 0;
     }
 
-    .editor input[type='color'] {
-      inline-size: 54px;
+    .picker-area {
+      position: relative;
+      width: 100%;
+      height: 92px;
+      border-radius: 14px;
+      overflow: hidden;
+      cursor: crosshair;
+      border: 1px solid rgb(255 255 255 / 0.08);
+      background: linear-gradient(to top, black, transparent), linear-gradient(to right, white, #8b5cf6);
+    }
+
+    .picker-thumb {
+      position: absolute;
+      width: 16px;
+      height: 16px;
+      border-radius: 999px;
+      border: 2px solid white;
+      transform: translate(-50%, -50%);
+      box-shadow: 0 0 0 1px rgb(0 0 0 / 0.28);
+      pointer-events: none;
+    }
+
+    .picker-hue {
+      width: 100%;
+      margin: 0;
+      accent-color: #8b5cf6;
+    }
+
+    .editor-text-input {
+      inline-size: 96px;
       block-size: 38px;
-      border: 0;
+      border: 1px solid rgb(255 255 255 / 0.12);
       border-radius: 12px;
-      padding: 0;
-      background: transparent;
-      cursor: pointer;
+      padding: 0 12px;
+      background: rgb(255 255 255 / 0.04);
+      color: #f8fafc;
     }
 
-    .editor input[type='color'][disabled] {
+    .selected-value {
+      font-size: 12px;
+      line-height: 1.35;
+    }
+
+    .editor-actions {
+      align-items: stretch;
+    }
+
+    .editor-actions .ghost-button {
+      white-space: nowrap;
+    }
+
+    .editor-text-input[disabled] {
       cursor: not-allowed;
       opacity: 0.55;
     }
@@ -225,11 +273,13 @@ export function getOverlayStyles(): string {
     }
 
     .list {
-      min-height: 0;
-      overflow: auto;
+      min-height: 160px;
+      overflow-y: auto;
+      overflow-x: hidden;
       padding: 10px;
       display: grid;
       gap: 8px;
+      overscroll-behavior: contain;
     }
 
     .row-button {

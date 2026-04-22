@@ -43,6 +43,27 @@ describe('browser overlay', () => {
     expect(panel?.hidden).toBe(false)
   })
 
+  it('permite mover el boton flotante por la pantalla', () => {
+    mountCssVarsDevtool({ productionGuard: 'off' })
+
+    const { shadowRoot } = getOverlayParts()
+    const toggleButton = shadowRoot.querySelector('.toggle-button') as HTMLButtonElement
+
+    Object.defineProperty(toggleButton, 'getBoundingClientRect', {
+      configurable: true,
+      value: () => ({ left: 700, top: 700, width: 140, height: 52, right: 840, bottom: 752 })
+    })
+
+    toggleButton.dispatchEvent(new PointerEvent('pointerdown', { clientX: 710, clientY: 710, bubbles: true }))
+    window.dispatchEvent(new PointerEvent('pointermove', { clientX: 320, clientY: 280, bubbles: true }))
+    window.dispatchEvent(new PointerEvent('pointerup', { bubbles: true }))
+
+    expect(toggleButton.style.left).not.toBe('')
+    expect(toggleButton.style.top).not.toBe('')
+    expect(toggleButton.style.right).toBe('auto')
+    expect(toggleButton.style.bottom).toBe('auto')
+  })
+
   it('selecciona la primera variable visible y filtra la lista', () => {
     const handle = mountCssVarsDevtool({ productionGuard: 'off', defaultOpen: true })
     void handle
@@ -65,9 +86,12 @@ describe('browser overlay', () => {
     void handle
 
     const { shadowRoot } = getOverlayParts()
-    const colorInput = shadowRoot.querySelector('.editor input[type="color"]') as HTMLInputElement
+    const colorInput = shadowRoot.querySelector('.editor .editor-text-input') as HTMLInputElement
     colorInput.value = '#112233'
-    colorInput.dispatchEvent(new Event('input', { bubbles: true }))
+    colorInput.dispatchEvent(new Event('change', { bubbles: true }))
+
+    const pickerArea = shadowRoot.querySelector('.picker-area') as HTMLDivElement
+    expect(pickerArea.hidden).toBe(false)
 
     expect(document.documentElement.style.getPropertyValue('--color-base').trim()).toBe('#112233')
 
@@ -88,9 +112,9 @@ describe('browser overlay', () => {
     void handle
 
     const { shadowRoot } = getOverlayParts()
-    const colorInput = shadowRoot.querySelector('.editor input[type="color"]') as HTMLInputElement
+    const colorInput = shadowRoot.querySelector('.editor .editor-text-input') as HTMLInputElement
     colorInput.value = '#445566'
-    colorInput.dispatchEvent(new Event('input', { bubbles: true }))
+    colorInput.dispatchEvent(new Event('change', { bubbles: true }))
 
     const resetAllButton = Array.from(shadowRoot.querySelectorAll('.ghost-button')).find((button) => button.textContent === 'Reset all') as HTMLButtonElement
     resetAllButton.click()
@@ -175,9 +199,8 @@ describe('browser overlay', () => {
     })
 
     const { shadowRoot } = getOverlayParts()
-    const colorInput = shadowRoot.querySelector('.editor input[type="color"]') as HTMLInputElement
+    const colorInput = shadowRoot.querySelector('.editor .editor-text-input') as HTMLInputElement
     colorInput.value = '#223344'
-    colorInput.dispatchEvent(new Event('input', { bubbles: true }))
 
     expect(window.localStorage.getItem('overlay-test')).toBeNull()
 
@@ -195,11 +218,19 @@ describe('browser overlay', () => {
 
     handle.show()
     colorInput.value = '#334455'
-    colorInput.dispatchEvent(new Event('input', { bubbles: true }))
     colorInput.dispatchEvent(new Event('change', { bubbles: true }))
     await waitForStorageFlush()
 
     expect(window.localStorage.getItem('overlay-test')).toContain('#334455')
+  })
+
+  it('ya no usa input color nativo en el overlay', () => {
+    mountCssVarsDevtool({ productionGuard: 'off', defaultOpen: true })
+
+    const { shadowRoot } = getOverlayParts()
+    expect(shadowRoot.querySelector('input[type="color"]')).toBeNull()
+    expect(shadowRoot.querySelector('.picker-area')).not.toBeNull()
+    expect(shadowRoot.querySelector('.picker-hue')).not.toBeNull()
   })
 
   it('ignora storage corrupta y restaura estado valido cuando existe', () => {

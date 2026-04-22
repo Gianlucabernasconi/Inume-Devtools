@@ -4,7 +4,7 @@ import security from 'eslint-plugin-security'
 
 export default [
   {
-    ignores: ['dist/**', 'node_modules/**']
+    ignores: ['dist/**', 'node_modules/**', 'examples/**']
   },
   {
     files: ['**/*.ts'],

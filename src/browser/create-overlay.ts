@@ -64,12 +64,23 @@ export function createOverlay(options: OverlayOptions): OverlayController {
         offsetY: number
       }
     | undefined
+  let togglePosition: PersistedPanelPosition | undefined
+  let toggleDragState:
+    | {
+        offsetX: number
+        offsetY: number
+        moved: boolean
+      }
+    | undefined
 
   let panel: HTMLDivElement | undefined
   let selectedNameElement: HTMLParagraphElement | undefined
   let selectedValueElement: HTMLParagraphElement | undefined
   let swatchElement: HTMLDivElement | undefined
   let colorInput: HTMLInputElement | undefined
+  let pickerAreaElement: HTMLDivElement | undefined
+  let pickerThumbElement: HTMLDivElement | undefined
+  let hueInput: HTMLInputElement | undefined
   let resetButton: HTMLButtonElement | undefined
   let resetAllButton: HTMLButtonElement | undefined
   let searchInput: HTMLInputElement | undefined
@@ -85,11 +96,31 @@ export function createOverlay(options: OverlayOptions): OverlayController {
   let menuButton: HTMLButtonElement | undefined
   let actionMenu: HTMLDivElement | undefined
   let menuOpen = false
+  let pickerState:
+    | {
+        h: number
+        s: number
+        l: number
+      }
+    | undefined
 
   const stopDrag = (): void => {
     dragState = undefined
     currentWindow.removeEventListener('pointermove', handlePointerMove)
     currentWindow.removeEventListener('pointerup', stopDrag)
+  }
+
+  const stopToggleDrag = (): void => {
+    currentWindow.removeEventListener('pointermove', handleTogglePointerMove)
+    currentWindow.removeEventListener('pointerup', stopToggleDrag)
+
+    if (!toggleDragState) {
+      return
+    }
+
+    currentWindow.setTimeout(() => {
+      toggleDragState = undefined
+    }, 0)
   }
 
   const handlePointerMove = (event: PointerEvent): void => {
@@ -108,20 +139,35 @@ export function createOverlay(options: OverlayOptions): OverlayController {
     updateFooter()
   }
 
-  const handleResize = (): void => {
-    if (!panel || !panelPosition) {
+  const handleTogglePointerMove = (event: PointerEvent): void => {
+    if (!toggleDragState) {
       return
     }
 
-    const panelRect = panel.getBoundingClientRect()
-    panelPosition = {
-      left: clamp(panelPosition.left, 8, currentWindow.innerWidth - panelRect.width - 8),
-      top: clamp(panelPosition.top, 8, currentWindow.innerHeight - panelRect.height - 8)
+    const toggleRect = toggleButton.getBoundingClientRect()
+    togglePosition = {
+      left: clamp(event.clientX - toggleDragState.offsetX, 8, currentWindow.innerWidth - toggleRect.width - 8),
+      top: clamp(event.clientY - toggleDragState.offsetY, 8, currentWindow.innerHeight - toggleRect.height - 8)
     }
 
-    applyPanelPosition()
-    statusText = 'Panel re-fitted to viewport.'
-    updateFooter()
+    toggleDragState.moved = true
+    applyTogglePosition()
+  }
+
+  const handleResize = (): void => {
+    if (panel && panelPosition) {
+      const panelRect = panel.getBoundingClientRect()
+      panelPosition = {
+        left: clamp(panelPosition.left, 8, currentWindow.innerWidth - panelRect.width - 8),
+        top: clamp(panelPosition.top, 8, currentWindow.innerHeight - panelRect.height - 8)
+      }
+
+      applyPanelPosition()
+      statusText = 'Panel re-fitted to viewport.'
+      updateFooter()
+    }
+
+    applyTogglePosition()
   }
 
   function isSessionInert(): boolean {
@@ -161,6 +207,11 @@ export function createOverlay(options: OverlayOptions): OverlayController {
   }
 
   function toHexColor(value: string): string | undefined {
+    const directHex = value.trim()
+    if (/^#[\da-f]{6}$/i.test(directHex)) {
+      return directHex.toLowerCase()
+    }
+
     const sample = currentDocument.createElement('span')
     sample.style.color = ''
     sample.style.color = value
@@ -184,6 +235,99 @@ export function createOverlay(options: OverlayOptions): OverlayController {
       .join('')}`
   }
 
+  function hexToHsl(hex: string): { h: number; s: number; l: number } {
+    const red = Number.parseInt(hex.slice(1, 3), 16) / 255
+    const green = Number.parseInt(hex.slice(3, 5), 16) / 255
+    const blue = Number.parseInt(hex.slice(5, 7), 16) / 255
+    const max = Math.max(red, green, blue)
+    const min = Math.min(red, green, blue)
+    const delta = max - min
+    let hue = 0
+
+    if (delta !== 0) {
+      if (max === red) {
+        hue = ((green - blue) / delta) % 6
+      } else if (max === green) {
+        hue = (blue - red) / delta + 2
+      } else {
+        hue = (red - green) / delta + 4
+      }
+    }
+
+    hue = Math.round(hue * 60)
+    if (hue < 0) {
+      hue += 360
+    }
+
+    const lightness = (max + min) / 2
+    const saturation = delta === 0 ? 0 : delta / (1 - Math.abs(2 * lightness - 1))
+
+    return {
+      h: hue,
+      s: Math.round(saturation * 100),
+      l: Math.round(lightness * 100)
+    }
+  }
+
+  function hslToHex(hue: number, saturation: number, lightness: number): string {
+    const s = saturation / 100
+    const l = lightness / 100
+    const chroma = (1 - Math.abs(2 * l - 1)) * s
+    const segment = hue / 60
+    const x = chroma * (1 - Math.abs((segment % 2) - 1))
+    let red = 0
+    let green = 0
+    let blue = 0
+
+    if (segment >= 0 && segment < 1) {
+      red = chroma
+      green = x
+    } else if (segment < 2) {
+      red = x
+      green = chroma
+    } else if (segment < 3) {
+      green = chroma
+      blue = x
+    } else if (segment < 4) {
+      green = x
+      blue = chroma
+    } else if (segment < 5) {
+      red = x
+      blue = chroma
+    } else {
+      red = chroma
+      blue = x
+    }
+
+    const match = l - chroma / 2
+    return `#${[red, green, blue]
+      .map((channel) => Math.round((channel + match) * 255).toString(16).padStart(2, '0'))
+      .join('')}`
+  }
+
+  function updatePickerUi(): void {
+    if (!pickerAreaElement || !pickerThumbElement || !hueInput || !colorInput || !pickerState) {
+      return
+    }
+
+    pickerAreaElement.style.background = `linear-gradient(to top, black, transparent), linear-gradient(to right, white, hsl(${pickerState.h} 100% 50%))`
+    pickerThumbElement.style.left = `${pickerState.s}%`
+    pickerThumbElement.style.top = `${100 - pickerState.l}%`
+    hueInput.value = String(Math.round(pickerState.h))
+  }
+
+  function commitPickerColor(): void {
+    if (!selectedName || !colorInput || !pickerState) {
+      return
+    }
+
+    const nextHex = hslToHex(pickerState.h, pickerState.s, pickerState.l)
+    colorInput.value = nextHex
+    session.setVar(selectedName, nextHex)
+    statusText = `Updated ${selectedName}.`
+    render()
+  }
+
   function applyPanelPosition(): void {
     if (!panel) {
       return
@@ -199,6 +343,28 @@ export function createOverlay(options: OverlayOptions): OverlayController {
     panel.style.left = `${panelPosition.left}px`
     panel.style.top = `${panelPosition.top}px`
     panel.style.right = 'auto'
+  }
+
+  function applyTogglePosition(): void {
+    const toggleRect = toggleButton.getBoundingClientRect()
+
+    if (!togglePosition) {
+      toggleButton.style.left = ''
+      toggleButton.style.top = ''
+      toggleButton.style.right = '16px'
+      toggleButton.style.bottom = '16px'
+      return
+    }
+
+    togglePosition = {
+      left: clamp(togglePosition.left, 8, currentWindow.innerWidth - toggleRect.width - 8),
+      top: clamp(togglePosition.top, 8, currentWindow.innerHeight - toggleRect.height - 8)
+    }
+
+    toggleButton.style.left = `${togglePosition.left}px`
+    toggleButton.style.top = `${togglePosition.top}px`
+    toggleButton.style.right = 'auto'
+    toggleButton.style.bottom = 'auto'
   }
 
   function updateToggleButton(): void {
@@ -224,7 +390,7 @@ export function createOverlay(options: OverlayOptions): OverlayController {
   }
 
   function updateEditor(selectedItem: CssVarItem | undefined): void {
-    if (!selectedNameElement || !selectedValueElement || !swatchElement || !colorInput || !resetButton || !resetAllButton) {
+    if (!selectedNameElement || !selectedValueElement || !swatchElement || !colorInput || !resetButton || !resetAllButton || !pickerAreaElement || !pickerThumbElement || !hueInput) {
       return
     }
 
@@ -234,6 +400,9 @@ export function createOverlay(options: OverlayOptions): OverlayController {
       swatchElement.style.background = '#0f172a'
       colorInput.value = '#000000'
       colorInput.disabled = true
+      pickerAreaElement.hidden = true
+      hueInput.disabled = true
+      pickerState = undefined
       resetButton.disabled = true
       resetAllButton.disabled = session.getVars().length === 0
       return
@@ -243,8 +412,16 @@ export function createOverlay(options: OverlayOptions): OverlayController {
     selectedNameElement.textContent = selectedItem.name
     selectedValueElement.textContent = selectedItem.value
     swatchElement.style.background = selectedItem.value
-    colorInput.value = nextHex ?? '#000000'
+    colorInput.value = nextHex ?? selectedItem.value
     colorInput.disabled = !selectedItem.editableAsColor || !nextHex
+    pickerAreaElement.hidden = !selectedItem.editableAsColor || !nextHex
+    hueInput.disabled = !selectedItem.editableAsColor || !nextHex
+
+    if (nextHex) {
+      pickerState = hexToHsl(nextHex)
+      updatePickerUi()
+    }
+
     resetButton.disabled = false
     resetAllButton.disabled = session.getVars().length === 0
   }
@@ -480,24 +657,102 @@ export function createOverlay(options: OverlayOptions): OverlayController {
     editorControls.className = 'editor-controls'
 
     colorInput = currentDocument.createElement('input')
-    colorInput.type = 'color'
-    colorInput.addEventListener('input', () => {
+    colorInput.type = 'text'
+    colorInput.className = 'editor-text-input'
+    colorInput.spellcheck = false
+    colorInput.autocomplete = 'off'
+    colorInput.autocapitalize = 'off'
+    colorInput.addEventListener('change', () => {
       if (!selectedName) {
         return
       }
 
-      session.setVar(selectedName, colorInput?.value ?? '#000000')
+      const nextHex = colorInput?.value.trim().toLowerCase() ?? ''
+      if (!/^#[\da-f]{6}$/i.test(nextHex)) {
+        render()
+        return
+      }
+
+      pickerState = hexToHsl(nextHex)
+      session.setVar(selectedName, nextHex)
       statusText = `Updated ${selectedName}.`
       render()
-    })
-    colorInput.addEventListener('change', () => {
       options.onCommit?.('change', { panelPosition })
+    })
+    colorInput.addEventListener('keydown', (event) => {
+      if (event.key !== 'Enter') {
+        return
+      }
+
+      event.preventDefault()
+      colorInput?.dispatchEvent(new Event('change', { bubbles: true }))
+      colorInput?.blur()
     })
     colorInput.addEventListener('blur', () => {
       options.onCommit?.('change', { panelPosition })
     })
 
     editorControls.append(colorInput)
+
+    pickerAreaElement = currentDocument.createElement('div')
+    pickerAreaElement.className = 'picker-area'
+    pickerAreaElement.addEventListener('pointerdown', (event) => {
+      if (!pickerState || !pickerAreaElement) {
+        return
+      }
+
+      const updateFromPointer = (pointerEvent: PointerEvent): void => {
+        const rect = pickerAreaElement?.getBoundingClientRect()
+        if (!rect || !pickerState) {
+          return
+        }
+
+        pickerState.s = clamp(((pointerEvent.clientX - rect.left) / rect.width) * 100, 0, 100)
+        pickerState.l = 100 - clamp(((pointerEvent.clientY - rect.top) / rect.height) * 100, 0, 100)
+        commitPickerColor()
+      }
+
+      updateFromPointer(event)
+
+      const handleMove = (moveEvent: PointerEvent): void => {
+        updateFromPointer(moveEvent)
+      }
+
+      const handleUp = (): void => {
+        currentWindow.removeEventListener('pointermove', handleMove)
+        currentWindow.removeEventListener('pointerup', handleUp)
+        options.onCommit?.('change', { panelPosition })
+      }
+
+      currentWindow.addEventListener('pointermove', handleMove)
+      currentWindow.addEventListener('pointerup', handleUp)
+    })
+
+    pickerThumbElement = currentDocument.createElement('div')
+    pickerThumbElement.className = 'picker-thumb'
+    pickerAreaElement.append(pickerThumbElement)
+
+    hueInput = currentDocument.createElement('input')
+    hueInput.type = 'range'
+    hueInput.className = 'picker-hue'
+    hueInput.min = '0'
+    hueInput.max = '360'
+    hueInput.step = '1'
+    hueInput.addEventListener('input', () => {
+      if (!pickerState || !hueInput) {
+        return
+      }
+
+      pickerState.h = Number(hueInput.value)
+      commitPickerColor()
+    })
+    hueInput.addEventListener('change', () => {
+      options.onCommit?.('change', { panelPosition })
+    })
+
+    const pickerInline = currentDocument.createElement('div')
+    pickerInline.className = 'picker-inline'
+    pickerInline.append(pickerAreaElement, hueInput)
 
     const actionButtons = currentDocument.createElement('div')
     actionButtons.className = 'footer-actions'
@@ -530,7 +785,7 @@ export function createOverlay(options: OverlayOptions): OverlayController {
 
     actionButtons.append(resetButton, resetAllButton)
     editorActions.append(editorControls, actionButtons)
-    editor.append(editorTop, editorActions)
+    editor.append(editorTop, pickerInline, editorActions)
 
     const searchSection = currentDocument.createElement('div')
     searchSection.className = 'search'
@@ -677,7 +932,30 @@ export function createOverlay(options: OverlayOptions): OverlayController {
     host.remove()
   }
 
-  toggleButton.addEventListener('click', () => toggle())
+  toggleButton.addEventListener('click', () => {
+    if (toggleDragState?.moved) {
+      return
+    }
+
+    toggle()
+  })
+  toggleButton.addEventListener('pointerdown', (event) => {
+    const rect = toggleButton.getBoundingClientRect()
+
+    togglePosition = {
+      left: rect.left,
+      top: rect.top
+    }
+
+    toggleDragState = {
+      offsetX: event.clientX - rect.left,
+      offsetY: event.clientY - rect.top,
+      moved: false
+    }
+
+    currentWindow.addEventListener('pointermove', handleTogglePointerMove)
+    currentWindow.addEventListener('pointerup', stopToggleDrag)
+  })
   currentWindow.addEventListener('resize', handleResize)
   currentWindow.addEventListener('pointerdown', (event) => {
     if (!menuOpen || !actionMenu || !menuButton) {
@@ -696,6 +974,7 @@ export function createOverlay(options: OverlayOptions): OverlayController {
     closeActionMenu()
   })
   updateToggleButton()
+  applyTogglePosition()
 
   if (options.defaultOpen) {
     show()

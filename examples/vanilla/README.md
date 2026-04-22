@@ -26,4 +26,4 @@ Sample mínimo para validar manualmente el core headless sobre un documento HTML
 
 ## Nota
 
-El overlay browser todavía no está implementado en esta etapa, por lo que el import dinámico del entry `browser` solo valida que el entry exista y sea seguro de importar.
+El overlay browser ya existe. Este sample sigue siendo útil porque valida el core headless de forma explícita y también sirve como base de smoke tests reales con Playwright.

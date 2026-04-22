@@ -1,9 +1,8 @@
-import { DEFAULT_PREFIXES } from '../shared/constants'
 import { normalizeCustomPropertyName } from '../shared/normalize-name'
 import type { CssVarsSessionOptions } from '../shared/types'
 
 interface ResolvedFilters {
-  prefixes: string[]
+  prefixes?: string[]
   include: Set<string>
   exclude: Set<string>
   match?: (name: string) => boolean
@@ -41,8 +40,8 @@ function toNormalizedSet(values: string[] | undefined): Set<string> {
 }
 
 export function resolveFilters(options: CssVarsSessionOptions): ResolvedFilters {
-  const prefixes = (options.prefixes ?? [...DEFAULT_PREFIXES])
-    .map(normalizePrefix)
+  const prefixes = options.prefixes
+    ?.map(normalizePrefix)
     .filter((prefix): prefix is string => Boolean(prefix))
 
   return {
@@ -54,7 +53,7 @@ export function resolveFilters(options: CssVarsSessionOptions): ResolvedFilters 
 }
 
 export function shouldIncludeName(name: string, filters: ResolvedFilters): boolean {
-  const includedByPrefix = filters.prefixes.some((prefix) => name.startsWith(prefix))
+  const includedByPrefix = filters.prefixes ? filters.prefixes.some((prefix) => name.startsWith(prefix)) : true
   const included = includedByPrefix || filters.include.has(name)
 
   if (!included) {

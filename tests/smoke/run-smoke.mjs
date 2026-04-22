@@ -1,15 +1,13 @@
 import assert from 'node:assert/strict'
 import { createServer } from 'node:http'
 import { readFile } from 'node:fs/promises'
-import { extname, join, normalize, resolve } from 'node:path'
+import { extname, normalize, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 import { chromium } from 'playwright'
 
 const ROOT_DIR = resolve(fileURLToPath(new URL('../../', import.meta.url)))
 const HOST = '127.0.0.1'
-const PORT = 4173
-const BASE_URL = `http://${HOST}:${PORT}`
 
 const MIME_TYPES = {
   '.css': 'text/css; charset=utf-8',
@@ -21,14 +19,14 @@ const MIME_TYPES = {
 }
 
 async function main() {
-  const server = await startStaticServer()
+  const { server, baseUrl } = await startStaticServer()
   const browser = await chromium.launch()
   const context = await browser.newContext({
     acceptDownloads: true,
-    baseURL: BASE_URL
+    baseURL: baseUrl
   })
 
-  await context.grantPermissions(['clipboard-read', 'clipboard-write'], { origin: BASE_URL })
+  await context.grantPermissions(['clipboard-read', 'clipboard-write'], { origin: baseUrl })
 
   const page = await context.newPage()
   page.on('pageerror', (error) => {
@@ -69,7 +67,7 @@ async function smokeDiscovery(page) {
   await overlay.locator('.panel').waitFor({ state: 'visible' })
 
   const selectedName = (await overlay.locator('.selected-name').textContent())?.trim()
-  assert.equal(selectedName, '--color-base')
+  assert.equal(selectedName, '--bg-page')
 
   const visibleRows = await overlay.locator('.row-button').count()
   assert.ok(visibleRows >= 4, 'Expected discovered vars to appear in overlay list')
@@ -116,7 +114,9 @@ async function assertText(page, selector, expectedText) {
 async function startStaticServer() {
   const server = createServer(async (request, response) => {
     try {
-      const url = new URL(request.url ?? '/', BASE_URL)
+      const address = server.address()
+      const currentPort = typeof address === 'object' && address ? address.port : 0
+      const url = new URL(request.url ?? '/', `http://${HOST}:${currentPort}`)
       const pathname = url.pathname.endsWith('/') ? `${url.pathname}index.html` : url.pathname
       const relativePath = normalize(pathname).replace(/^\/+/, '')
       const filePath = resolve(ROOT_DIR, relativePath)
@@ -141,7 +141,7 @@ async function startStaticServer() {
   })
 
   await new Promise((resolvePromise, rejectPromise) => {
-    server.listen(PORT, HOST, (error) => {
+    server.listen(0, HOST, (error) => {
       if (error) {
         rejectPromise(error)
         return
@@ -151,7 +151,15 @@ async function startStaticServer() {
     })
   })
 
-  return server
+  const address = server.address()
+  if (!address || typeof address === 'string') {
+    throw new Error('No se pudo resolver el puerto del servidor de smoke tests.')
+  }
+
+  return {
+    server,
+    baseUrl: `http://${HOST}:${address.port}`
+  }
 }
 
 main().catch((error) => {

@@ -7,39 +7,51 @@ function setupDocument(): Document {
   document.documentElement.style.cssText = ''
   document.documentElement.style.setProperty('--color-base', '#ffffff')
   document.documentElement.style.setProperty('--color-primary', 'rgb(0 0 0 / 1)')
+  document.documentElement.style.setProperty('--bg-page', '#121826')
+  document.documentElement.style.setProperty('--text-muted', '#7c89a0')
   document.documentElement.style.setProperty('--space-md', '16px')
   return document
 }
 
 describe('createCssVarsSession', () => {
-  it('descubre solo --color-* por defecto', () => {
+  it('descubre cualquier custom property real cuyo valor runtime sea color', () => {
     const session = createCssVarsSession({ target: setupDocument() })
 
     expect(session.getVars().map((item) => item.name)).toEqual([
+      '--bg-page',
       '--color-base',
-      '--color-primary'
+      '--color-primary',
+      '--text-muted'
     ])
   })
 
-  it('prefixes reemplaza el default', () => {
+  it('no inventa custom properties a partir de propiedades nativas del navegador', () => {
+    const session = createCssVarsSession({ target: setupDocument() })
+
+    expect(session.getVars().some((item) => item.name === '--color-interpolation')).toBe(false)
+    expect(session.getVars().some((item) => item.name === '--color-scheme')).toBe(false)
+  })
+
+  it('prefixes restringe el scope a los prefijos configurados', () => {
     const session = createCssVarsSession({
       target: setupDocument(),
       prefixes: ['--space-']
     })
 
-    expect(session.getVars().map((item) => item.name)).toEqual(['--space-md'])
+    expect(session.getVars()).toEqual([])
   })
 
   it('respeta include y exclude', () => {
     const session = createCssVarsSession({
       target: setupDocument(),
-      include: ['space-md'],
+      include: ['space-md', 'text-muted'],
       exclude: ['--color-primary']
     })
 
     expect(session.getVars().map((item) => item.name)).toEqual([
+      '--bg-page',
       '--color-base',
-      '--space-md'
+      '--text-muted'
     ])
   })
 
@@ -92,8 +104,8 @@ describe('createCssVarsSession', () => {
     session.setVar('--color-primary', '#111111')
     session.setVar('--color-base', 'var(--other)')
 
-    expect(session.exportCss()).toBe(`:root {\n  --color-primary: #111111;\n}`)
-    expect(session.exportJson()).toBe(`{\n  "version": 1,\n  "vars": {\n    "--color-primary": "#111111"\n  }\n}`)
+    expect(session.exportCss()).toBe(`:root {\n  --bg-page: #121826;\n  --color-primary: #111111;\n  --text-muted: #7c89a0;\n}`)
+    expect(session.exportJson()).toBe(`{\n  "version": 1,\n  "vars": {\n    "--bg-page": "#121826",\n    "--color-primary": "#111111",\n    "--text-muted": "#7c89a0"\n  }\n}`)
   })
 
   it('destroy es idempotente y deja getters vacíos', () => {

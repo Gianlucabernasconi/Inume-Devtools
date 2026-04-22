@@ -20,26 +20,24 @@
 
 ## Resumen ejecutivo
 
-**Estado general:** base técnica inicial lista.
+**Estado general:** producto funcional pero en corrección de criterio de discovery y sample realista.
 
 El proyecto ya salió de la etapa de documentación-only y hoy tiene:
 
 - scaffold de paquete npm
 - entrypoints públicos definidos
 - core headless funcional
+- discovery por custom properties reales cuyo valor runtime sea color
 - export CSS/JSON funcional
 - tests dirigidos del core
-- sample `vanilla` mínimo para validación manual
+- sample `vanilla` en proceso de corrección para reflejar uso real del producto
 - linting y typecheck básicos
 
-Todavía **no** están implementados:
+Todavía **no** están cerrados del todo:
 
-- overlay visual real
-- storage browser opt-in
-- i18n `en/es`
-- copy/download reales
-- smoke tests con Playwright
-- validación final con `npm pack`
+- publicación final
+- endurecimiento final del sample de prueba para eliminar hardcodes remanentes
+- consolidación final del comportamiento UX del editor de color
 
 ---
 
@@ -87,7 +85,7 @@ Cuando se cierre una tarea importante, actualizar:
 
 ### Etapa real del proyecto
 
-El proyecto está en **fase de fundación técnica del core**.
+El proyecto está en **fase avanzada de producto**, pero con ajustes importantes todavía abiertos en sample y UX del editor de color.
 
 Más concretamente:
 
@@ -109,6 +107,7 @@ Más concretamente:
 #### Core implementado
 
 - discovery one-shot sobre `Document`
+- discovery de cualquier custom property real cuyo valor runtime sea color
 - filtros por `prefixes`, `include`, `exclude`, `match`
 - baseline inmutable por sesión
 - `setVar()`, `resetVar()`, `resetAll()`, `destroy()`
@@ -132,6 +131,8 @@ Más concretamente:
 - `examples/vanilla/app.js`
 - `examples/vanilla/styles.css`
 - `examples/vanilla/README.md`
+- sample ampliado para depender de más variables de color reales
+- todavía quedan hardcodes visuales remanentes en el sample que deben eliminarse
 - validación manual del core usando el build de `dist/`
 
 #### Tests actuales
@@ -331,36 +332,36 @@ Más concretamente:
 
 ## Fase 15 — Resto de integration samples
 
-- [ ] `examples/vite`
-- [ ] `examples/react`
-- [ ] `examples/nuxt`
+- [x] `examples/vite`
+- [x] `examples/react`
+- [x] `examples/nuxt`
 
-**Estado de fase:** pendiente.
+**Estado de fase:** completada.
 
 ---
 
 ## Fase 16 — Documentación
 
 - [x] `README.md` base inicial
-- [ ] quick start completo
-- [ ] docs de integración vanilla
-- [ ] docs de integración vite
-- [ ] docs de integración react
-- [ ] docs de integración nuxt
-- [ ] documento de arquitectura
+- [x] quick start completo
+- [x] docs de integración vanilla
+- [x] docs de integración vite
+- [x] docs de integración react
+- [x] docs de integración nuxt
+- [x] documento de arquitectura
 
-**Estado de fase:** parcial.
+**Estado de fase:** completada.
 
 ---
 
 ## Fase 17 — Validación con `npm pack`
 
-- [ ] correr `npm pack`
-- [ ] inspeccionar tarball
-- [ ] verificar que `examples/` no se publique
-- [ ] verificar `exports` y `types`
+- [x] correr `npm pack`
+- [x] inspeccionar tarball
+- [x] verificar que `examples/` no se publique
+- [x] verificar `exports` y `types`
 
-**Estado de fase:** pendiente.
+**Estado de fase:** completada.
 
 ---
 
@@ -378,21 +379,22 @@ Más concretamente:
 
 La siguiente fase lógica del proyecto es:
 
-### **Fase 15 — Resto de integration samples**
+### **Fase 18 — Publicación**
 
 Motivo:
 
 - es la siguiente fase definida por la especificación
-- los smoke tests reales con Playwright ya validan discovery, copy, download y overlay básico
-- el siguiente gap real es cerrar los samples de integración restantes
+- la documentación ya quedó cerrada
+- `npm pack` ya fue validado e inspeccionado
+- el siguiente gap real es preparar la publicación final del paquete
 
 Después de eso, la prioridad correcta sería:
 
-1. docs
-2. `npm pack`
-3. publicación
-4. hardening final
-5. release checklist
+1. hardening final
+2. release checklist
+3. publicación efectiva
+4. mantenimiento post-v1
+5. iteración de v1.x
 
 ---
 
