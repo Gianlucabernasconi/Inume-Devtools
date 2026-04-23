@@ -1,7 +1,7 @@
 import type { CssVarsLocale, CssVarsMessages } from '../shared/types'
 
 const EN_MESSAGES: CssVarsMessages = {
-  title: 'CSS Vars Devtools',
+  title: 'Inume CSS Devtools',
   searchPlaceholder: 'Search variable',
   noResults: 'No visible variables match this filter.',
   noSelection: 'No selection',
@@ -21,7 +21,7 @@ const EN_MESSAGES: CssVarsMessages = {
 }
 
 const ES_MESSAGES: CssVarsMessages = {
-  title: 'Devtools CSS Vars',
+  title: 'Inume CSS Devtools',
   searchPlaceholder: 'Buscar variable',
   noResults: 'No hay variables visibles para este filtro.',
   noSelection: 'Sin seleccion',
