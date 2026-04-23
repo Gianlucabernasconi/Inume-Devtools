@@ -47,10 +47,22 @@ export function getOverlayStyles(): string {
     }
 
     .toggle-button:focus-visible,
-    .panel button:focus-visible,
-    .panel input:focus-visible {
+    .panel button:focus-visible {
       outline: 2px solid rgb(137 191 165 / 0.88);
       outline-offset: 2px;
+    }
+
+    .search input:focus-visible,
+    .editor-text-input:focus-visible {
+      outline: 0;
+    }
+
+    .search-field:focus-within,
+    .editor-input-shell:focus-within {
+      border-color: rgb(137 191 165 / 0.35);
+      box-shadow:
+        0 0 0 2px rgb(137 191 165 / 0.12),
+        inset 0 1px 0 rgb(255 255 255 / 0.04);
     }
 
     .toggle-button {
@@ -62,7 +74,7 @@ export function getOverlayStyles(): string {
       gap: 8px;
       height: 36px;
       padding: 0 18px 0 14px;
-      border: 1px solid var(--color-border);
+      border: 1px solid rgb(122 184 154 / 0.35);
       border-radius: 999px;
       background:
         linear-gradient(180deg, rgb(18 26 31 / 0.96), rgb(10 14 18 / 0.96)),
