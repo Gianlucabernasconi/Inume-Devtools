@@ -645,6 +645,8 @@ export function getOverlayStyles(): string {
     }
 
     .footer {
+      display: flex;
+      align-items: center;
       justify-content: space-between;
       gap: 8px;
       padding: 8px 10px;
