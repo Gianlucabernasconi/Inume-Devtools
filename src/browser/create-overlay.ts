@@ -58,6 +58,14 @@ export function createOverlay(options: OverlayOptions): OverlayController {
   shadowRoot.append(style, root)
   currentDocument.body.append(host)
 
+  const computed = currentWindow.getComputedStyle(root)
+  const spriteAccent = computed.getPropertyValue('--sprite-accent').trim() || '#7ab89a'
+  const spriteBg = computed.getPropertyValue('--sprite-bg').trim() || '#06090b'
+
+  const toggleSprite = createSpriteCat(currentDocument, spriteAccent, spriteBg)
+  toggleSprite.className = 'sprite-cat sprite-cat--launcher'
+  toggleButton.insertBefore(toggleSprite, toggleText)
+
   const messages = options.messages
   const title = options.title?.trim() || messages.title
 
@@ -638,6 +646,13 @@ export function createOverlay(options: OverlayOptions): OverlayController {
     const headerCopy = currentDocument.createElement('div')
     headerCopy.className = 'header-copy'
 
+    const headerComputed = currentWindow.getComputedStyle(root)
+    const headerSpriteAccent = headerComputed.getPropertyValue('--sprite-accent').trim() || '#7ab89a'
+    const headerSpriteBg = headerComputed.getPropertyValue('--sprite-bg').trim() || '#06090b'
+
+    const headerSprite = createSpriteCat(currentDocument, headerSpriteAccent, headerSpriteBg)
+    headerSprite.className = 'sprite-cat sprite-cat--header'
+
     const titleElement = currentDocument.createElement('p')
     titleElement.className = 'title'
     titleElement.textContent = title
@@ -645,7 +660,7 @@ export function createOverlay(options: OverlayOptions): OverlayController {
     const headerMeta = currentDocument.createElement('div')
     headerMeta.className = 'header-meta'
 
-    headerCopy.append(titleElement, headerMeta)
+    headerCopy.append(headerSprite, titleElement, headerMeta)
 
     const closeButton = currentDocument.createElement('button')
     closeButton.type = 'button'
@@ -1193,6 +1208,46 @@ function createIcon(
   }
 
   return svg
+}
+
+function createSpriteCat(currentDocument: Document, accent: string, bg: string): HTMLCanvasElement {
+  const SCALE = 2
+  const GRID = [
+    [0, 0, 0, 0, 1, 0, 0, 0, 1, 0],
+    [0, 0, 0, 1, 1, 1, 1, 1, 1, 0],
+    [0, 0, 1, 1, 2, 1, 1, 1, 2, 1],
+    [0, 0, 1, 1, 2, 1, 1, 1, 2, 1],
+    [0, 0, 1, 1, 1, 1, 1, 1, 1, 1],
+    [1, 0, 1, 1, 1, 1, 1, 1, 1, 1],
+    [0, 1, 1, 1, 1, 1, 1, 1, 1, 1],
+    [0, 0, 0, 1, 1, 1, 1, 1, 1, 0],
+    [0, 0, 0, 1, 0, 1, 0, 1, 0, 0],
+    [0, 0, 0, 1, 0, 1, 0, 1, 0, 0]
+  ]
+
+  const canvas = currentDocument.createElement('canvas')
+  canvas.width = GRID[0].length * SCALE
+  canvas.height = GRID.length * SCALE
+  canvas.setAttribute('aria-hidden', 'true')
+
+  const ctx = canvas.getContext('2d')
+  if (!ctx) {
+    return canvas
+  }
+
+  GRID.forEach((row, r) =>
+    row.forEach((px, c) => {
+      if (px === 1) {
+        ctx.fillStyle = accent
+        ctx.fillRect(c * SCALE, r * SCALE, SCALE, SCALE)
+      } else if (px === 2) {
+        ctx.fillStyle = bg
+        ctx.fillRect(c * SCALE, r * SCALE, SCALE, SCALE)
+      }
+    })
+  )
+
+  return canvas
 }
 
 function clamp(value: number, min: number, max: number): number {

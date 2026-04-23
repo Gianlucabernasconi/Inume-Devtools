@@ -29,6 +29,8 @@ export function getOverlayStyles(): string {
       --color-warm: #bda389;
       --color-highlight: #c7ece0;
       --color-shadow: rgb(0 0 0 / 0.72);
+      --sprite-accent: var(--color-accent);
+      --sprite-bg: var(--color-bg);
       --font-body: "Inter", system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
       --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
       position: fixed;
@@ -232,6 +234,26 @@ export function getOverlayStyles(): string {
         radial-gradient(circle at 7px 10px, var(--color-text-soft) 0 1px, transparent 1.2px);
       margin-left: -3px;
       margin-right: 2px;
+    }
+
+    .sprite-cat {
+      display: block;
+      flex: none;
+      image-rendering: pixelated;
+      image-rendering: crisp-edges;
+    }
+
+    .sprite-cat--header {
+      inline-size: 20px;
+      block-size: 20px;
+      border-radius: 3px;
+      margin-right: 2px;
+    }
+
+    .sprite-cat--launcher {
+      inline-size: 20px;
+      block-size: 20px;
+      border-radius: 4px;
     }
 
     .title {
