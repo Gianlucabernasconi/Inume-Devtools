@@ -120,9 +120,13 @@ Más concretamente:
 - `mountCssVarsDevtool()` existe
 - `productionGuard` base existe
 - overlay real con Shadow DOM
-- launcher flotante draggable rediseñado según mockup
+- launcher flotante draggable rediseñado según mockup (compacto oscuro, sin badge)
 - panel draggable rediseñado con header, editor, buscador, lista y footer alineados al mockup
+- paleta vintage tech aplicada en launcher, header, panel y botones
+- tipografías centralizadas en variables CSS (`--font-body`, `--font-mono`)
+- sprite cat (mascota pixel art) integrado en header y launcher
 - acción visible `Copy CSS` con feedback contextual
+- eliminación de elementos superfluos (badge dev-only, grip visual del launcher)
 
 #### Sample manual implementado
 

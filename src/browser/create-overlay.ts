@@ -42,27 +42,19 @@ export function createOverlay(options: OverlayOptions): OverlayController {
   toggleButton.className = 'toggle-button'
   toggleButton.setAttribute('aria-label', options.title?.trim() || options.messages.title)
 
-  const toggleGrip = currentDocument.createElement('span')
-  toggleGrip.className = 'toggle-grip'
-  toggleGrip.append(createIcon(currentDocument, 'grip'))
-
-  const toggleBrand = currentDocument.createElement('span')
-  toggleBrand.className = 'toggle-brand'
-  toggleBrand.append(createIcon(currentDocument, 'launcher'))
-
   const toggleText = currentDocument.createElement('span')
   toggleText.className = 'toggle-text'
 
-  toggleButton.append(toggleGrip, toggleBrand, toggleText)
+  toggleButton.append(toggleText)
   root.append(toggleButton)
   shadowRoot.append(style, root)
   currentDocument.body.append(host)
 
   const computed = currentWindow.getComputedStyle(root)
   const spriteAccent = computed.getPropertyValue('--sprite-accent').trim() || '#7ab89a'
-  const spriteBg = computed.getPropertyValue('--sprite-bg').trim() || '#06090b'
+  const spriteEye = computed.getPropertyValue('--sprite-eye').trim() || '#2a5a44'
 
-  const toggleSprite = createSpriteCat(currentDocument, spriteAccent, spriteBg)
+  const toggleSprite = createSpriteCat(currentDocument, spriteAccent, spriteEye)
   toggleSprite.className = 'sprite-cat sprite-cat--launcher'
   toggleButton.insertBefore(toggleSprite, toggleText)
 
@@ -648,9 +640,9 @@ export function createOverlay(options: OverlayOptions): OverlayController {
 
     const headerComputed = currentWindow.getComputedStyle(root)
     const headerSpriteAccent = headerComputed.getPropertyValue('--sprite-accent').trim() || '#7ab89a'
-    const headerSpriteBg = headerComputed.getPropertyValue('--sprite-bg').trim() || '#06090b'
+    const headerSpriteEye = headerComputed.getPropertyValue('--sprite-eye').trim() || '#2a5a44'
 
-    const headerSprite = createSpriteCat(currentDocument, headerSpriteAccent, headerSpriteBg)
+    const headerSprite = createSpriteCat(currentDocument, headerSpriteAccent, headerSpriteEye)
     headerSprite.className = 'sprite-cat sprite-cat--header'
 
     const titleElement = currentDocument.createElement('p')
@@ -1116,7 +1108,7 @@ export function createOverlay(options: OverlayOptions): OverlayController {
 
 function createIcon(
   currentDocument: Document,
-  name: 'check' | 'close' | 'copy' | 'grip' | 'launcher' | 'more' | 'reset' | 'search'
+  name: 'check' | 'close' | 'copy' | 'launcher' | 'more' | 'reset' | 'search'
 ): SVGSVGElement {
   const svg = currentDocument.createElementNS('http://www.w3.org/2000/svg', 'svg')
   svg.setAttribute('viewBox', '0 0 12 12')
@@ -1138,19 +1130,6 @@ function createIcon(
   }
 
   switch (name) {
-    case 'grip':
-      svg.setAttribute('viewBox', '0 0 10 14')
-      for (const [cx, cy] of [
-        ['2.5', '3'],
-        ['6.5', '3'],
-        ['2.5', '6.5'],
-        ['6.5', '6.5'],
-        ['2.5', '10'],
-        ['6.5', '10']
-      ]) {
-        appendCircle(cx, cy, '0.9')
-      }
-      break
     case 'launcher': {
       svg.setAttribute('viewBox', '0 0 10 10')
       appendPath('M3 2.5L5 5L3 7.5M5.5 7.5H7.5')
@@ -1210,19 +1189,23 @@ function createIcon(
   return svg
 }
 
-function createSpriteCat(currentDocument: Document, accent: string, bg: string): HTMLCanvasElement {
+function createSpriteCat(currentDocument: Document, accent: string, eye: string): HTMLCanvasElement {
   const SCALE = 2
+  const S = accent
+  const D = eye
+  const _ = null
   const GRID = [
-    [0, 0, 0, 0, 1, 0, 0, 0, 1, 0],
-    [0, 0, 0, 1, 1, 1, 1, 1, 1, 0],
-    [0, 0, 1, 1, 2, 1, 1, 1, 2, 1],
-    [0, 0, 1, 1, 2, 1, 1, 1, 2, 1],
-    [0, 0, 1, 1, 1, 1, 1, 1, 1, 1],
-    [1, 0, 1, 1, 1, 1, 1, 1, 1, 1],
-    [0, 1, 1, 1, 1, 1, 1, 1, 1, 1],
-    [0, 0, 0, 1, 1, 1, 1, 1, 1, 0],
-    [0, 0, 0, 1, 0, 1, 0, 1, 0, 0],
-    [0, 0, 0, 1, 0, 1, 0, 1, 0, 0]
+    [_, _, _, S, _, _, S, _, _, _],
+    [_, _, _, S, S, S, S, _, _, _],
+    [_, _, S, S, S, S, S, S, _, _],
+    [_, S, S, D, S, S, D, S, S, _],
+    [_, S, S, D, S, S, D, S, S, _],
+    [_, S, S, S, S, S, S, S, S, _],
+    [_, S, S, S, S, S, S, S, S, _],
+    [S, _, S, S, S, S, S, S, _, S],
+    [_, _, _, S, S, S, S, _, _, _],
+    [_, _, _, S, _, _, S, _, _, _],
+    [_, _, _, S, _, _, S, _, _, _]
   ]
 
   const canvas = currentDocument.createElement('canvas')
@@ -1237,11 +1220,8 @@ function createSpriteCat(currentDocument: Document, accent: string, bg: string):
 
   GRID.forEach((row, r) =>
     row.forEach((px, c) => {
-      if (px === 1) {
-        ctx.fillStyle = accent
-        ctx.fillRect(c * SCALE, r * SCALE, SCALE, SCALE)
-      } else if (px === 2) {
-        ctx.fillStyle = bg
+      if (px) {
+        ctx.fillStyle = px
         ctx.fillRect(c * SCALE, r * SCALE, SCALE, SCALE)
       }
     })

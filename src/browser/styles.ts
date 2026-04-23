@@ -29,9 +29,9 @@ export function getOverlayStyles(): string {
       --color-warm: #bda389;
       --color-highlight: #c7ece0;
       --color-shadow: rgb(0 0 0 / 0.72);
-      --sprite-accent: var(--color-accent);
-      --sprite-bg: var(--color-bg);
-      --font-body: "Inter", system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      --sprite-accent: #7ab89a;
+      --sprite-eye: #2a5a44;
+      --font-body: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
       --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
       position: fixed;
       inset: 0;
@@ -60,8 +60,8 @@ export function getOverlayStyles(): string {
       display: inline-flex;
       align-items: center;
       gap: 8px;
-      height: 30px;
-      padding: 0 10px 0 8px;
+      height: 36px;
+      padding: 0 18px 0 14px;
       border: 1px solid var(--color-border);
       border-radius: 999px;
       background:
@@ -101,15 +101,12 @@ export function getOverlayStyles(): string {
         0 0 0 1px rgb(199 236 224 / 0.08) inset;
     }
 
-    .toggle-grip,
     .search-icon {
       display: inline-flex;
       color: var(--color-text-soft);
       flex: none;
     }
 
-    .toggle-grip svg,
-    .toggle-brand svg,
     .close-button svg,
     .ghost-button svg,
     .primary-button svg,
@@ -119,28 +116,6 @@ export function getOverlayStyles(): string {
       inline-size: 12px;
       block-size: 12px;
       fill: currentColor;
-    }
-
-    .toggle-brand {
-      inline-size: 18px;
-      block-size: 18px;
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      border-radius: 5px;
-      background:
-        linear-gradient(135deg, var(--color-highlight), var(--color-accent) 58%, var(--color-warm));
-      box-shadow:
-        inset 0 1px 0 rgb(255 255 255 / 0.18),
-        0 0 0 1px rgb(255 255 255 / 0.06);
-      color: #05070a;
-      flex: none;
-    }
-
-    .toggle-brand svg {
-      inline-size: 10px;
-      block-size: 10px;
-      fill: none;
     }
 
     .toggle-text {
@@ -219,23 +194,6 @@ export function getOverlayStyles(): string {
       flex: 1;
     }
 
-    .header-copy::before {
-      content: '';
-      display: inline-block;
-      inline-size: 10px;
-      block-size: 14px;
-      flex: none;
-      background:
-        radial-gradient(circle at 2px 3px, var(--color-text-soft) 0 1px, transparent 1.2px),
-        radial-gradient(circle at 7px 3px, var(--color-text-soft) 0 1px, transparent 1.2px),
-        radial-gradient(circle at 2px 6.5px, var(--color-text-soft) 0 1px, transparent 1.2px),
-        radial-gradient(circle at 7px 6.5px, var(--color-text-soft) 0 1px, transparent 1.2px),
-        radial-gradient(circle at 2px 10px, var(--color-text-soft) 0 1px, transparent 1.2px),
-        radial-gradient(circle at 7px 10px, var(--color-text-soft) 0 1px, transparent 1.2px);
-      margin-left: -3px;
-      margin-right: 2px;
-    }
-
     .sprite-cat {
       display: block;
       flex: none;
@@ -245,14 +203,14 @@ export function getOverlayStyles(): string {
 
     .sprite-cat--header {
       inline-size: 20px;
-      block-size: 20px;
+      block-size: 22px;
       border-radius: 3px;
       margin-right: 2px;
     }
 
     .sprite-cat--launcher {
       inline-size: 20px;
-      block-size: 20px;
+      block-size: 22px;
       border-radius: 4px;
     }
 
@@ -515,7 +473,7 @@ export function getOverlayStyles(): string {
     .primary-button {
       block-size: 28px;
       padding: 0 10px;
-      background: linear-gradient(135deg, var(--color-highlight), var(--color-accent) 45%, var(--color-accent-deep));
+      background: var(--color-accent);
       border-color: rgb(137 191 165 / 0.42);
       color: #05070a;
       font-size: 11.5px;
@@ -527,7 +485,7 @@ export function getOverlayStyles(): string {
     }
 
     .primary-button:hover {
-      background: linear-gradient(135deg, #d4bfa5, var(--color-warm) 46%, #a68b6b);
+      background: var(--color-warm);
       border-color: rgb(189 163 137 / 0.50);
       color: #05070a;
       box-shadow:
