@@ -14,6 +14,10 @@ export function getOverlayStyles(): string {
     }
 
     .overlay-root {
+      --motion-fast: 140ms;
+      --motion-base: 180ms;
+      --ease-out: cubic-bezier(0.22, 0.8, 0.36, 1);
+      --ease-press: cubic-bezier(0.3, 0, 0.2, 1);
       --color-bg: #05070a;
       --color-surface: #0c1216;
       --color-surface-raised: #10171b;
@@ -74,7 +78,7 @@ export function getOverlayStyles(): string {
       gap: 8px;
       height: 36px;
       padding: 0 18px 0 14px;
-      border: 1px solid rgb(122 184 154 / 0.35);
+      border: 1px solid rgb(122 184 154 / 0.22);
       border-radius: 999px;
       background:
         linear-gradient(180deg, rgb(18 26 31 / 0.96), rgb(10 14 18 / 0.96)),
@@ -83,27 +87,51 @@ export function getOverlayStyles(): string {
       box-shadow:
         0 8px 20px -6px var(--color-shadow),
         0 1px 2px rgb(0 0 0 / 0.5),
-        inset 0 1px 0 rgb(255 255 255 / 0.04);
+        inset 0 1px 0 rgb(255 255 255 / 0.04),
+        0 0 0 1px rgb(122 184 154 / 0.08),
+        0 0 6px 0 rgb(122 184 154 / 0.10);
       cursor: pointer;
       font-size: 11px;
       font-weight: 500;
       letter-spacing: 0.1px;
       user-select: none;
       transition:
-        box-shadow 140ms ease,
-        border-color 140ms ease,
-        transform 140ms ease,
-        color 140ms ease;
+        box-shadow var(--motion-fast) var(--ease-out),
+        border-color var(--motion-fast) ease,
+        transform var(--motion-fast) var(--ease-out),
+        color var(--motion-fast) ease;
+    }
+
+    .toggle-button::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      border-radius: inherit;
+      background: rgb(122 184 154 / 0.06);
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity var(--motion-fast) ease;
     }
 
     .toggle-button:hover {
-      border-color: var(--color-border-strong);
+      border-color: rgb(122 184 154 / 0.45);
       color: var(--color-text);
       box-shadow:
         0 12px 28px -8px var(--color-shadow),
         0 1px 2px rgb(0 0 0 / 0.55),
-        inset 0 1px 0 rgb(255 255 255 / 0.05);
+        inset 0 1px 0 rgb(255 255 255 / 0.05),
+        0 0 0 1px rgb(122 184 154 / 0.10),
+        0 0 8px 0 rgb(122 184 154 / 0.14);
       transform: translateY(-1px);
+    }
+
+    .toggle-button:hover::after {
+      opacity: 1;
+    }
+
+    .toggle-button:active {
+      transform: scale(0.985);
+      transition-duration: 80ms;
     }
 
     .toggle-button[data-state='open'] {
@@ -157,8 +185,8 @@ export function getOverlayStyles(): string {
       transform: translateY(0) scale(1);
       transform-origin: top right;
       transition:
-        opacity 170ms cubic-bezier(.22, .8, .2, 1),
-        transform 170ms cubic-bezier(.22, .8, .2, 1);
+        opacity var(--motion-base) var(--ease-out),
+        transform var(--motion-base) var(--ease-out);
       will-change: opacity, transform;
     }
 
@@ -451,10 +479,11 @@ export function getOverlayStyles(): string {
       color: var(--color-text-muted);
       cursor: pointer;
       transition:
-        background 120ms ease,
-        border-color 120ms ease,
-        color 120ms ease,
-        transform 120ms ease;
+        background var(--motion-fast) ease,
+        border-color var(--motion-fast) ease,
+        color var(--motion-fast) ease,
+        transform var(--motion-fast) var(--ease-out),
+        box-shadow var(--motion-fast) ease;
     }
 
     .ghost-button:hover,
@@ -463,6 +492,12 @@ export function getOverlayStyles(): string {
       background: rgb(226 236 232 / 0.045);
       border-color: rgb(226 236 232 / 0.12);
       transform: translateY(-1px);
+    }
+
+    .ghost-button:active,
+    .close-button:active {
+      transform: scale(0.97);
+      transition-duration: 80ms;
     }
 
     .ghost-button:disabled,
@@ -504,6 +539,11 @@ export function getOverlayStyles(): string {
         0 14px 24px -12px rgb(189 163 137 / 0.55),
         inset 0 1px 0 rgb(255 255 255 / 0.20);
       transform: translateY(-1px);
+    }
+
+    .primary-button:active {
+      transform: scale(0.97);
+      transition-duration: 80ms;
     }
 
     .close-button {
@@ -552,15 +592,16 @@ export function getOverlayStyles(): string {
       color: inherit;
       cursor: pointer;
       text-align: left;
+      transition: background var(--motion-fast) ease;
     }
 
     .row-button:hover {
-      background: linear-gradient(90deg, rgb(137 191 165 / 0.06), rgb(189 163 137 / 0.03));
+      background: rgb(137 191 165 / 0.05);
     }
 
     .row-button.is-selected {
       border-left-color: var(--color-accent);
-      background: linear-gradient(90deg, rgb(137 191 165 / 0.16), rgb(199 236 224 / 0.06));
+      background: rgb(137 191 165 / 0.10);
       box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.02), inset 0 -1px 0 rgb(255 255 255 / 0.02);
     }
 
@@ -688,6 +729,21 @@ export function getOverlayStyles(): string {
     .feedback-toast svg {
       fill: none;
       stroke: currentColor;
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .toggle-button,
+      .toggle-button::after,
+      .panel,
+      .ghost-button,
+      .primary-button,
+      .close-button,
+      .row-button,
+      .search-field,
+      .editor-input-shell {
+        transition-duration: 0.01ms !important;
+        animation-duration: 0.01ms !important;
+      }
     }
 
     @media (max-width: 640px) {
