@@ -5,6 +5,8 @@ export interface CssVarsMessages {
   title: string
   searchPlaceholder: string
   noResults: string
+  noSelection: string
+  noVariablesDetected: string
   rawValue: string
   alpha: string
   reset: string
@@ -14,9 +16,9 @@ export interface CssVarsMessages {
   downloadCss: string
   downloadJson: string
   clearPersisted: string
-  devOnly: string
   close: string
   open: string
+  moreActions: string
 }
 
 export interface CssVarsStorageOptions {

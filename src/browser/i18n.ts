@@ -4,6 +4,8 @@ const EN_MESSAGES: CssVarsMessages = {
   title: 'CSS Vars Devtools',
   searchPlaceholder: 'Search variable',
   noResults: 'No visible variables match this filter.',
+  noSelection: 'No selection',
+  noVariablesDetected: 'No variables detected.',
   rawValue: 'Raw value',
   alpha: 'Alpha',
   reset: 'Reset',
@@ -13,15 +15,17 @@ const EN_MESSAGES: CssVarsMessages = {
   downloadCss: 'Download CSS',
   downloadJson: 'Download JSON',
   clearPersisted: 'Clear persisted',
-  devOnly: 'Dev only',
   close: 'Close',
-  open: 'Open'
+  open: 'Open',
+  moreActions: 'More actions'
 }
 
 const ES_MESSAGES: CssVarsMessages = {
   title: 'Devtools CSS Vars',
   searchPlaceholder: 'Buscar variable',
   noResults: 'No hay variables visibles para este filtro.',
+  noSelection: 'Sin seleccion',
+  noVariablesDetected: 'No se detectaron variables.',
   rawValue: 'Valor raw',
   alpha: 'Alpha',
   reset: 'Resetear',
@@ -31,9 +35,9 @@ const ES_MESSAGES: CssVarsMessages = {
   downloadCss: 'Descargar CSS',
   downloadJson: 'Descargar JSON',
   clearPersisted: 'Limpiar persistido',
-  devOnly: 'Solo dev',
   close: 'Cerrar',
-  open: 'Abrir'
+  open: 'Abrir',
+  moreActions: 'Mas acciones'
 }
 
 export function resolveLocale(locale: CssVarsLocale | undefined, currentNavigator?: Navigator): Exclude<CssVarsLocale, 'auto'> {

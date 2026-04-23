@@ -20,7 +20,7 @@
 
 ## Resumen ejecutivo
 
-**Estado general:** producto funcional pero en corrección de criterio de discovery y sample realista.
+**Estado general:** producto funcional con overlay browser rediseñado y sample realista todavía en ajuste.
 
 El proyecto ya salió de la etapa de documentación-only y hoy tiene:
 
@@ -37,7 +37,6 @@ Todavía **no** están cerrados del todo:
 
 - publicación final
 - endurecimiento final del sample de prueba para eliminar hardcodes remanentes
-- consolidación final del comportamiento UX del editor de color
 
 ---
 
@@ -85,13 +84,13 @@ Cuando se cierre una tarea importante, actualizar:
 
 ### Etapa real del proyecto
 
-El proyecto está en **fase avanzada de producto**, pero con ajustes importantes todavía abiertos en sample y UX del editor de color.
+El proyecto está en **fase avanzada de producto**, con el overlay browser ya rediseñado y ajustes importantes todavía abiertos en el sample.
 
 Más concretamente:
 
 - **Infraestructura base:** lista
 - **Core headless:** funcional
-- **Browser/UI real:** pendiente
+- **Browser/UI real:** funcional
 - **Release v1:** lejos todavía
 
 ### Evidencia actual en el repo
@@ -114,16 +113,16 @@ Más concretamente:
 - `exportCss()` y `exportJson()` desde estado en memoria
 - validación de valores exportables y soporte raw controlado con `allowRaw`
 
-#### Browser implementado parcialmente
+#### Browser implementado
 
 - entry `@inume/css-vars-devtools/browser` existe
 - import SSR-safe e inert al importarse
 - `mountCssVarsDevtool()` existe
 - `productionGuard` base existe
 - overlay real con Shadow DOM
-- botón flotante + panel draggable
-- editor de variable activa, buscador y lista scrollable
-- acción visible `Copy CSS` con feedback mínimo
+- launcher flotante draggable rediseñado según mockup
+- panel draggable rediseñado con header, editor, buscador, lista y footer alineados al mockup
+- acción visible `Copy CSS` con feedback contextual
 
 #### Sample manual implementado
 

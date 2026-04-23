@@ -1,35 +1,31 @@
 import { createCssVarsSession } from '../../dist/index.js'
 
-const root = document.documentElement
-
-if (!root.style.getPropertyValue('--color-base').trim()) {
-  root.style.setProperty('--color-base', '#0b1020')
-  root.style.setProperty('--color-surface', '#141b34')
-  root.style.setProperty('--color-primary', '#8b5cf6')
-  root.style.setProperty('--color-text-primary', '#f8fafc')
-  root.style.setProperty('--bg-page', '#070b18')
-  root.style.setProperty('--bg-page-top-glow', '#8b5cf6')
-  root.style.setProperty('--bg-page-bottom', '#0b1020')
-  root.style.setProperty('--surface-panel', '#1b2235')
-  root.style.setProperty('--surface-panel-strong', '#232b3f')
-  root.style.setProperty('--surface-panel-soft', '#202739')
-  root.style.setProperty('--surface-panel-muted', '#2a3142')
-  root.style.setProperty('--surface-card', '#1b2235')
-  root.style.setProperty('--surface-card-elevated', '#313a57')
-  root.style.setProperty('--surface-card-alt', '#161d30')
-  root.style.setProperty('--surface-code', '#0b1020')
-  root.style.setProperty('--border-subtle', '#343d57')
-  root.style.setProperty('--border-strong', '#49526e')
-  root.style.setProperty('--text-muted', '#b4bfd8')
-  root.style.setProperty('--text-soft', '#919bb3')
-  root.style.setProperty('--button-secondary-bg', '#2c3448')
-  root.style.setProperty('--button-secondary-text', '#f8fafc')
-  root.style.setProperty('--preview-accent-start', '#a58df6')
-  root.style.setProperty('--preview-accent-end', '#4a5ec7')
-  root.style.setProperty('--hero-glow', '#7c3aed')
-  root.style.setProperty('--shadow-color', '#020617')
+const UI_LABELS = {
+  sessionReady: 'Session ready.',
+  sessionUpdated: 'Session updated.',
+  randomized: 'Randomized the current palette.',
+  resetAll: 'Reset all variables to baseline.',
+  refreshed: 'Refreshed the current session snapshot.',
+  copiedCss: 'Copied CSS export to clipboard.',
+  copiedJson: 'Copied JSON export to clipboard.',
+  startedCssDownload: 'Started CSS download.',
+  startedJsonDownload: 'Started JSON download.',
+  browserNotLoaded: 'Browser entry not loaded',
+  browserLoaded: 'Browser entry loaded through dynamic import.',
+  browserFailed: 'Browser entry failed to load:',
+  clipboardFailed: 'Clipboard failed:',
+  pickerTitle: 'Color picker',
+  pickerClose: 'Close',
+  pickerCancel: 'Cancel',
+  pickerApply: 'Apply',
+  pickColorFor: (name) => `Pick color for ${name}`,
+  reset: 'Reset',
+  restored: (name) => `Restored ${name}.`,
+  updated: (name) => `Updated ${name}.`,
+  resetToBaseline: (name) => `Reset ${name} to baseline.`
 }
 
+const root = document.documentElement
 const session = createCssVarsSession()
 
 const controlsContainer = document.querySelector('#controls')
@@ -63,7 +59,7 @@ function randomHexColor() {
     .padStart(6, '0')}`
 }
 
-function updateOutputs(message = 'Session updated.') {
+function updateOutputs(message = UI_LABELS.sessionUpdated) {
   cssOutput.textContent = session.exportCss()
   jsonOutput.textContent = session.exportJson()
   sessionStatus.textContent = message
@@ -81,8 +77,8 @@ function ensurePicker() {
   picker.hidden = true
   picker.innerHTML = `
     <div class="custom-picker__header">
-      <strong class="custom-picker__title">Color picker</strong>
-      <button type="button" class="custom-picker__close ghost">Close</button>
+      <strong class="custom-picker__title">${UI_LABELS.pickerTitle}</strong>
+      <button type="button" class="custom-picker__close ghost">${UI_LABELS.pickerClose}</button>
     </div>
     <div class="custom-picker__preview-row">
       <div class="custom-picker__preview"></div>
@@ -95,8 +91,8 @@ function ensurePicker() {
       <input class="custom-picker__hue" type="range" min="0" max="360" step="1" />
     </div>
     <div class="custom-picker__footer">
-      <button type="button" class="custom-picker__cancel ghost">Cancel</button>
-      <button type="button" class="custom-picker__apply">Apply</button>
+      <button type="button" class="custom-picker__cancel ghost">${UI_LABELS.pickerCancel}</button>
+      <button type="button" class="custom-picker__apply">${UI_LABELS.pickerApply}</button>
     </div>
   `
 
@@ -149,7 +145,7 @@ function closePicker(restore) {
     const nextValue = next ? next.value : activePicker.initialHex
     activePicker.swatch.style.background = nextValue
     activePicker.value.textContent = nextValue
-    updateOutputs(`Restored ${activePicker.name}.`)
+    updateOutputs(UI_LABELS.restored(activePicker.name))
   }
 
   picker.hidden = true
@@ -196,7 +192,7 @@ function bindPicker() {
       return
     }
 
-    applyPickerValue(picker, `Updated ${activePicker.name}.`)
+    applyPickerValue(picker, UI_LABELS.updated(activePicker.name))
     closePicker(false)
   })
 
@@ -207,7 +203,7 @@ function bindPicker() {
 
     activePicker.h = Number(hueInput.value)
     activePicker.hex = hslToHex(activePicker.h, activePicker.s, activePicker.l)
-    applyPickerValue(picker, `Updated ${activePicker.name}.`)
+    applyPickerValue(picker, UI_LABELS.updated(activePicker.name))
   })
 
   hexInput.addEventListener('change', () => {
@@ -226,7 +222,7 @@ function bindPicker() {
     activePicker.h = next.h
     activePicker.s = next.s
     activePicker.l = next.l
-    applyPickerValue(picker, `Updated ${activePicker.name}.`)
+    applyPickerValue(picker, UI_LABELS.updated(activePicker.name))
   })
 
   let dragging = false
@@ -294,7 +290,7 @@ function refreshControls() {
     const pickerButton = document.createElement('button')
     pickerButton.type = 'button'
     pickerButton.className = 'control-picker-button'
-    pickerButton.setAttribute('aria-label', `Pick color for ${labelText}`)
+    pickerButton.setAttribute('aria-label', UI_LABELS.pickColorFor(labelText))
     pickerButton.addEventListener('click', () => {
       openPicker(item.name, pickerSwatch, value)
     })
@@ -312,7 +308,7 @@ function refreshControls() {
     const resetButton = document.createElement('button')
     resetButton.type = 'button'
     resetButton.className = 'ghost'
-    resetButton.textContent = 'Reset'
+    resetButton.textContent = UI_LABELS.reset
     resetButton.addEventListener('click', () => {
       session.resetVar(item.name)
       const next = session.getVar(item.name)
@@ -320,7 +316,7 @@ function refreshControls() {
         value.textContent = next.value
         pickerSwatch.style.background = next.value
       }
-      updateOutputs(`Reset ${item.name} to baseline.`)
+      updateOutputs(UI_LABELS.resetToBaseline(item.name))
     })
 
     row.addEventListener('click', (event) => {
@@ -439,50 +435,50 @@ document.querySelector('#randomize-btn')?.addEventListener('click', () => {
   }
 
   refreshControls()
-  updateOutputs('Randomized the current palette.')
+  updateOutputs(UI_LABELS.randomized)
 })
 
 document.querySelector('#reset-all-btn')?.addEventListener('click', () => {
   session.resetAll()
   refreshControls()
-  updateOutputs('Reset all variables to baseline.')
+  updateOutputs(UI_LABELS.resetAll)
 })
 
 document.querySelector('#refresh-btn')?.addEventListener('click', () => {
   refreshControls()
-  updateOutputs('Refreshed the current session snapshot.')
+  updateOutputs(UI_LABELS.refreshed)
 })
 
 document.querySelector('#copy-css-btn')?.addEventListener('click', async () => {
   try {
     await navigator.clipboard.writeText(session.exportCss())
-    sessionStatus.textContent = 'Copied CSS export to clipboard.'
+    sessionStatus.textContent = UI_LABELS.copiedCss
   } catch (error) {
-    sessionStatus.textContent = `Clipboard failed: ${error.message}`
+    sessionStatus.textContent = `${UI_LABELS.clipboardFailed} ${error.message}`
   }
 })
 
 document.querySelector('#copy-json-btn')?.addEventListener('click', async () => {
   try {
     await navigator.clipboard.writeText(session.exportJson())
-    sessionStatus.textContent = 'Copied JSON export to clipboard.'
+    sessionStatus.textContent = UI_LABELS.copiedJson
   } catch (error) {
-    sessionStatus.textContent = `Clipboard failed: ${error.message}`
+    sessionStatus.textContent = `${UI_LABELS.clipboardFailed} ${error.message}`
   }
 })
 
 document.querySelector('#download-css-btn')?.addEventListener('click', () => {
   downloadText(session.exportCss(), 'vanilla-sample.css', 'text/css;charset=utf-8')
-  sessionStatus.textContent = 'Started CSS download.'
+  sessionStatus.textContent = UI_LABELS.startedCssDownload
 })
 
 document.querySelector('#download-json-btn')?.addEventListener('click', () => {
   downloadText(session.exportJson(), 'vanilla-sample.json', 'application/json;charset=utf-8')
-  sessionStatus.textContent = 'Started JSON download.'
+  sessionStatus.textContent = UI_LABELS.startedJsonDownload
 })
 
 refreshControls()
-updateOutputs('Session ready.')
+updateOutputs(UI_LABELS.sessionReady)
 bindPicker()
 
 const isLocalDevHost =
@@ -497,10 +493,10 @@ if (isLocalDevHost && typeof window !== 'undefined') {
         productionGuard: 'strict'
       })
 
-      browserStatus.textContent = 'Browser entry loaded through dynamic import.'
+      browserStatus.textContent = UI_LABELS.browserLoaded
     })
     .catch((error) => {
-      browserStatus.textContent = `Browser entry failed to load: ${error.message}`
+      browserStatus.textContent = `${UI_LABELS.browserFailed} ${error.message}`
     })
 }
 

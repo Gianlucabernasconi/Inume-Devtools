@@ -23,6 +23,7 @@ interface OverlayController {
 }
 
 export function createOverlay(options: OverlayOptions): OverlayController {
+  const PANEL_TRANSITION_MS = 170
   const { session } = options
   const currentWindow = window
   const currentDocument = currentWindow.document
@@ -39,12 +40,20 @@ export function createOverlay(options: OverlayOptions): OverlayController {
   const toggleButton = currentDocument.createElement('button')
   toggleButton.type = 'button'
   toggleButton.className = 'toggle-button'
+  toggleButton.setAttribute('aria-label', options.title?.trim() || options.messages.title)
 
-  const toggleBadge = currentDocument.createElement('span')
-  toggleBadge.className = 'toggle-badge'
+  const toggleGrip = currentDocument.createElement('span')
+  toggleGrip.className = 'toggle-grip'
+  toggleGrip.append(createIcon(currentDocument, 'grip'))
+
+  const toggleBrand = currentDocument.createElement('span')
+  toggleBrand.className = 'toggle-brand'
+  toggleBrand.append(createIcon(currentDocument, 'launcher'))
+
   const toggleText = currentDocument.createElement('span')
+  toggleText.className = 'toggle-text'
 
-  toggleButton.append(toggleBadge, toggleText)
+  toggleButton.append(toggleGrip, toggleBrand, toggleText)
   root.append(toggleButton)
   shadowRoot.append(style, root)
   currentDocument.body.append(host)
@@ -95,7 +104,11 @@ export function createOverlay(options: OverlayOptions): OverlayController {
   let downloadJsonButton: HTMLButtonElement | undefined
   let menuButton: HTMLButtonElement | undefined
   let actionMenu: HTMLDivElement | undefined
+  let searchMetaElement: HTMLSpanElement | undefined
+  let feedbackToastElement: HTMLDivElement | undefined
+  let feedbackToastTextElement: HTMLSpanElement | undefined
   let menuOpen = false
+  let closePanelTimer: number | undefined
   let pickerState:
     | {
         h: number
@@ -322,7 +335,7 @@ export function createOverlay(options: OverlayOptions): OverlayController {
     }
 
     const nextHex = hslToHex(pickerState.h, pickerState.s, pickerState.l)
-    colorInput.value = nextHex
+    colorInput.value = nextHex.slice(1)
     session.setVar(selectedName, nextHex)
     statusText = `Updated ${selectedName}.`
     render()
@@ -369,8 +382,8 @@ export function createOverlay(options: OverlayOptions): OverlayController {
 
   function updateToggleButton(): void {
     toggleButton.setAttribute('aria-expanded', String(visible))
-    toggleBadge.textContent = messages.devOnly
-    toggleText.textContent = visible ? messages.close : messages.open
+    toggleButton.dataset.state = visible ? 'open' : 'closed'
+    toggleText.textContent = title
   }
 
   function updateFooter(): void {
@@ -387,6 +400,14 @@ export function createOverlay(options: OverlayOptions): OverlayController {
     if (actionMenu) {
       actionMenu.hidden = !menuOpen
     }
+
+    if (feedbackToastElement) {
+      const showFeedback = statusText.includes('copied') || statusText.includes('copiado')
+      feedbackToastElement.hidden = !showFeedback
+      if (feedbackToastTextElement) {
+        feedbackToastTextElement.textContent = showFeedback ? statusText : ''
+      }
+    }
   }
 
   function updateEditor(selectedItem: CssVarItem | undefined): void {
@@ -395,10 +416,10 @@ export function createOverlay(options: OverlayOptions): OverlayController {
     }
 
     if (!selectedItem) {
-      selectedNameElement.textContent = 'No selection'
-      selectedValueElement.textContent = search ? messages.noResults : 'No variables detected.'
-      swatchElement.style.background = '#0f172a'
-      colorInput.value = '#000000'
+      selectedNameElement.textContent = messages.noSelection
+      selectedValueElement.textContent = search ? messages.noResults : messages.noVariablesDetected
+      swatchElement.style.setProperty('--swatch-fill', '#0f172a')
+      colorInput.value = '000000'
       colorInput.disabled = true
       pickerAreaElement.hidden = true
       hueInput.disabled = true
@@ -411,8 +432,8 @@ export function createOverlay(options: OverlayOptions): OverlayController {
     const nextHex = toHexColor(selectedItem.value)
     selectedNameElement.textContent = selectedItem.name
     selectedValueElement.textContent = selectedItem.value
-    swatchElement.style.background = selectedItem.value
-    colorInput.value = nextHex ?? selectedItem.value
+    swatchElement.style.setProperty('--swatch-fill', selectedItem.value)
+    colorInput.value = nextHex ? nextHex.slice(1) : selectedItem.value.replace(/^#/, '')
     colorInput.disabled = !selectedItem.editableAsColor || !nextHex
     pickerAreaElement.hidden = !selectedItem.editableAsColor || !nextHex
     hueInput.disabled = !selectedItem.editableAsColor || !nextHex
@@ -433,9 +454,15 @@ export function createOverlay(options: OverlayOptions): OverlayController {
 
     listElement.replaceChildren()
 
+    if (searchMetaElement) {
+      searchMetaElement.hidden = search.trim() === ''
+      searchMetaElement.textContent = search.trim() === '' ? '' : String(items.length)
+    }
+
     if (items.length === 0) {
       emptyCopyElement.textContent = messages.noResults
       emptyStateElement.hidden = false
+      listElement.append(emptyStateElement)
       return
     }
 
@@ -451,7 +478,7 @@ export function createOverlay(options: OverlayOptions): OverlayController {
 
       const swatch = currentDocument.createElement('span')
       swatch.className = 'row-swatch'
-      swatch.style.background = item.value
+      swatch.style.setProperty('--swatch-fill', item.value)
 
       const name = currentDocument.createElement('span')
       name.className = 'row-name'
@@ -482,7 +509,9 @@ export function createOverlay(options: OverlayOptions): OverlayController {
     ensureSelection(items)
     const selectedItem = getSelectedItem(items)
 
-    panel.hidden = !visible
+    if (visible) {
+      panel.hidden = false
+    }
     updateToggleButton()
     updateEditor(selectedItem)
     updateList(items)
@@ -579,6 +608,7 @@ export function createOverlay(options: OverlayOptions): OverlayController {
     panel = currentDocument.createElement('div')
     panel.className = 'panel'
     panel.hidden = true
+    panel.dataset.state = 'closed'
 
     const header = currentDocument.createElement('div')
     header.className = 'header'
@@ -615,11 +645,6 @@ export function createOverlay(options: OverlayOptions): OverlayController {
     const headerMeta = currentDocument.createElement('div')
     headerMeta.className = 'header-meta'
 
-    const devBadge = currentDocument.createElement('span')
-    devBadge.className = 'dev-badge'
-    devBadge.textContent = messages.devOnly
-
-    headerMeta.append(devBadge)
     headerCopy.append(titleElement, headerMeta)
 
     const closeButton = currentDocument.createElement('button')
@@ -627,7 +652,7 @@ export function createOverlay(options: OverlayOptions): OverlayController {
     closeButton.className = 'close-button'
     closeButton.dataset.noDrag = 'true'
     closeButton.setAttribute('aria-label', messages.close)
-    closeButton.textContent = '×'
+    closeButton.append(createIcon(currentDocument, 'close'))
     closeButton.addEventListener('click', () => hide())
 
     header.append(headerCopy, closeButton)
@@ -639,22 +664,36 @@ export function createOverlay(options: OverlayOptions): OverlayController {
     editorTop.className = 'editor-top'
 
     const editorCopy = currentDocument.createElement('div')
+    editorCopy.className = 'editor-copy'
+
+    const selectedToken = currentDocument.createElement('div')
+    selectedToken.className = 'selected-token'
+
     selectedNameElement = currentDocument.createElement('p')
     selectedNameElement.className = 'selected-name'
     selectedValueElement = currentDocument.createElement('p')
     selectedValueElement.className = 'selected-value'
-    editorCopy.append(selectedNameElement, selectedValueElement)
 
     swatchElement = currentDocument.createElement('div')
     swatchElement.className = 'swatch'
 
-    editorTop.append(editorCopy, swatchElement)
+    selectedToken.append(swatchElement, selectedNameElement)
+    editorCopy.append(selectedToken, selectedValueElement)
+
+    editorTop.append(editorCopy)
 
     const editorActions = currentDocument.createElement('div')
     editorActions.className = 'editor-actions'
 
     const editorControls = currentDocument.createElement('div')
     editorControls.className = 'editor-controls'
+
+    const colorInputShell = currentDocument.createElement('label')
+    colorInputShell.className = 'editor-input-shell'
+
+    const valuePrefix = currentDocument.createElement('span')
+    valuePrefix.className = 'editor-input-prefix'
+    valuePrefix.textContent = '#'
 
     colorInput = currentDocument.createElement('input')
     colorInput.type = 'text'
@@ -667,7 +706,8 @@ export function createOverlay(options: OverlayOptions): OverlayController {
         return
       }
 
-      const nextHex = colorInput?.value.trim().toLowerCase() ?? ''
+      const rawValue = colorInput?.value.trim().toLowerCase() ?? ''
+      const nextHex = rawValue.startsWith('#') ? rawValue : `#${rawValue}`
       if (!/^#[\da-f]{6}$/i.test(nextHex)) {
         render()
         return
@@ -692,7 +732,12 @@ export function createOverlay(options: OverlayOptions): OverlayController {
       options.onCommit?.('change', { panelPosition })
     })
 
-    editorControls.append(colorInput)
+    const valueSuffix = currentDocument.createElement('span')
+    valueSuffix.className = 'editor-input-suffix'
+    valueSuffix.textContent = 'hex'
+
+    colorInputShell.append(valuePrefix, colorInput, valueSuffix)
+    editorControls.append(colorInputShell)
 
     pickerAreaElement = currentDocument.createElement('div')
     pickerAreaElement.className = 'picker-area'
@@ -760,7 +805,7 @@ export function createOverlay(options: OverlayOptions): OverlayController {
     resetButton = currentDocument.createElement('button')
     resetButton.type = 'button'
     resetButton.className = 'ghost-button'
-    resetButton.textContent = messages.reset
+    resetButton.append(createIcon(currentDocument, 'reset'), currentDocument.createTextNode(messages.reset))
     resetButton.addEventListener('click', () => {
       if (!selectedName) {
         return
@@ -789,6 +834,14 @@ export function createOverlay(options: OverlayOptions): OverlayController {
 
     const searchSection = currentDocument.createElement('div')
     searchSection.className = 'search'
+
+    const searchField = currentDocument.createElement('label')
+    searchField.className = 'search-field'
+
+    const searchIcon = currentDocument.createElement('span')
+    searchIcon.className = 'search-icon'
+    searchIcon.append(createIcon(currentDocument, 'search'))
+
     searchInput = currentDocument.createElement('input')
     searchInput.type = 'search'
     searchInput.placeholder = messages.searchPlaceholder
@@ -797,7 +850,13 @@ export function createOverlay(options: OverlayOptions): OverlayController {
       statusText = search ? `Filtered by ${search}.` : 'Filter cleared.'
       render()
     })
-    searchSection.append(searchInput)
+
+    searchMetaElement = currentDocument.createElement('span')
+    searchMetaElement.className = 'search-meta'
+    searchMetaElement.hidden = true
+
+    searchField.append(searchIcon, searchInput, searchMetaElement)
+    searchSection.append(searchField)
 
     listElement = currentDocument.createElement('div')
     listElement.className = 'list'
@@ -822,8 +881,8 @@ export function createOverlay(options: OverlayOptions): OverlayController {
     menuButton.type = 'button'
     menuButton.className = 'ghost-button menu-button'
     menuButton.dataset.noDrag = 'true'
-    menuButton.textContent = '⋯'
-    menuButton.setAttribute('aria-label', 'More actions')
+    menuButton.setAttribute('aria-label', messages.moreActions)
+    menuButton.append(createIcon(currentDocument, 'more'))
     menuButton.addEventListener('click', () => {
       toggleActionMenu()
     })
@@ -859,7 +918,7 @@ export function createOverlay(options: OverlayOptions): OverlayController {
     copyCssButton = currentDocument.createElement('button')
     copyCssButton.type = 'button'
     copyCssButton.className = 'primary-button'
-    copyCssButton.textContent = messages.copyCss
+    copyCssButton.append(createIcon(currentDocument, 'copy'), currentDocument.createTextNode(messages.copyCss))
     copyCssButton.addEventListener('click', () => {
       void handleCopyCss()
     })
@@ -877,8 +936,18 @@ export function createOverlay(options: OverlayOptions): OverlayController {
     })
 
     actionMenu.append(copyJsonButton, downloadCssButton, downloadJsonButton, clearPersistedButton)
+
+    feedbackToastElement = currentDocument.createElement('div')
+    feedbackToastElement.className = 'feedback-toast'
+    feedbackToastElement.hidden = true
+    feedbackToastElement.append(createIcon(currentDocument, 'check'))
+
+    feedbackToastTextElement = currentDocument.createElement('span')
+    feedbackToastElement.append(feedbackToastTextElement)
+
     footerActions.append(actionMenu, menuButton)
     footerActions.append(copyCssButton)
+    footerActions.append(feedbackToastElement)
     footer.append(statusElement, footerActions)
 
     panel.append(header, editor, searchSection, listElement, footer)
@@ -893,6 +962,24 @@ export function createOverlay(options: OverlayOptions): OverlayController {
     ensurePanel()
     visible = true
     statusText = 'Panel opened.'
+    if (closePanelTimer) {
+      clearTimeout(closePanelTimer)
+      closePanelTimer = undefined
+    }
+
+    if (panel) {
+      panel.hidden = false
+      panel.dataset.state = 'closed'
+      void panel.offsetWidth
+      currentWindow.requestAnimationFrame(() => {
+        if (!panel || !visible || destroyed) {
+          return
+        }
+
+        panel.dataset.state = 'open'
+      })
+    }
+
     render()
   }
 
@@ -904,6 +991,23 @@ export function createOverlay(options: OverlayOptions): OverlayController {
     visible = false
     closeActionMenu()
     statusText = 'Panel hidden.'
+    if (closePanelTimer) {
+      clearTimeout(closePanelTimer)
+      closePanelTimer = undefined
+    }
+
+    if (panel) {
+      panel.dataset.state = 'closed'
+      closePanelTimer = currentWindow.setTimeout(() => {
+        if (!panel || visible || destroyed) {
+          return
+        }
+
+        panel.hidden = true
+        closePanelTimer = undefined
+      }, PANEL_TRANSITION_MS)
+    }
+
     render()
     options.onCommit?.('hide', { panelPosition })
   }
@@ -927,6 +1031,10 @@ export function createOverlay(options: OverlayOptions): OverlayController {
     }
 
     destroyed = true
+    if (closePanelTimer) {
+      clearTimeout(closePanelTimer)
+      closePanelTimer = undefined
+    }
     stopDrag()
     currentWindow.removeEventListener('resize', handleResize)
     host.remove()
@@ -989,6 +1097,102 @@ export function createOverlay(options: OverlayOptions): OverlayController {
     },
     destroy
   }
+}
+
+function createIcon(
+  currentDocument: Document,
+  name: 'check' | 'close' | 'copy' | 'grip' | 'launcher' | 'more' | 'reset' | 'search'
+): SVGSVGElement {
+  const svg = currentDocument.createElementNS('http://www.w3.org/2000/svg', 'svg')
+  svg.setAttribute('viewBox', '0 0 12 12')
+  svg.setAttribute('aria-hidden', 'true')
+  svg.setAttribute('focusable', 'false')
+
+  const appendCircle = (cx: string, cy: string, r: string): void => {
+    const circle = currentDocument.createElementNS('http://www.w3.org/2000/svg', 'circle')
+    circle.setAttribute('cx', cx)
+    circle.setAttribute('cy', cy)
+    circle.setAttribute('r', r)
+    svg.append(circle)
+  }
+
+  const appendPath = (d: string): void => {
+    const path = currentDocument.createElementNS('http://www.w3.org/2000/svg', 'path')
+    path.setAttribute('d', d)
+    svg.append(path)
+  }
+
+  switch (name) {
+    case 'grip':
+      svg.setAttribute('viewBox', '0 0 10 14')
+      for (const [cx, cy] of [
+        ['2.5', '3'],
+        ['6.5', '3'],
+        ['2.5', '6.5'],
+        ['6.5', '6.5'],
+        ['2.5', '10'],
+        ['6.5', '10']
+      ]) {
+        appendCircle(cx, cy, '0.9')
+      }
+      break
+    case 'launcher': {
+      svg.setAttribute('viewBox', '0 0 10 10')
+      appendPath('M3 2.5L5 5L3 7.5M5.5 7.5H7.5')
+      svg.setAttribute('fill', 'none')
+      svg.setAttribute('stroke', 'currentColor')
+      svg.setAttribute('stroke-width', '1.2')
+      svg.setAttribute('stroke-linecap', 'round')
+      svg.setAttribute('stroke-linejoin', 'round')
+      break
+    }
+    case 'close':
+      appendPath('M2.5 2.5l7 7M9.5 2.5l-7 7')
+      svg.setAttribute('fill', 'none')
+      svg.setAttribute('stroke', 'currentColor')
+      svg.setAttribute('stroke-width', '1.3')
+      svg.setAttribute('stroke-linecap', 'round')
+      break
+    case 'reset':
+      appendPath('M2.5 6a3.5 3.5 0 1 0 1-2.5M2.5 2v2h2')
+      svg.setAttribute('fill', 'none')
+      svg.setAttribute('stroke', 'currentColor')
+      svg.setAttribute('stroke-width', '1.15')
+      svg.setAttribute('stroke-linecap', 'round')
+      svg.setAttribute('stroke-linejoin', 'round')
+      break
+    case 'search':
+      appendCircle('5.25', '5.25', '3.5')
+      appendPath('M7.9 7.9L10 10')
+      svg.setAttribute('fill', 'none')
+      svg.setAttribute('stroke', 'currentColor')
+      svg.setAttribute('stroke-width', '1.2')
+      svg.setAttribute('stroke-linecap', 'round')
+      break
+    case 'more':
+      appendCircle('2', '6', '1')
+      appendCircle('6', '6', '1')
+      appendCircle('10', '6', '1')
+      break
+    case 'copy':
+      appendPath('M4 3.5h5v6H4zM2.5 2h5v1.5')
+      svg.setAttribute('fill', 'none')
+      svg.setAttribute('stroke', 'currentColor')
+      svg.setAttribute('stroke-width', '1.1')
+      svg.setAttribute('stroke-linecap', 'round')
+      svg.setAttribute('stroke-linejoin', 'round')
+      break
+    case 'check':
+      appendPath('M2 6.4L4.4 8.8L10 3.2')
+      svg.setAttribute('fill', 'none')
+      svg.setAttribute('stroke', 'currentColor')
+      svg.setAttribute('stroke-width', '1.4')
+      svg.setAttribute('stroke-linecap', 'round')
+      svg.setAttribute('stroke-linejoin', 'round')
+      break
+  }
+
+  return svg
 }
 
 function clamp(value: number, min: number, max: number): number {
