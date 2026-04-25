@@ -23,7 +23,7 @@ La integración `vanilla` es la referencia más directa del repo porque usa:
 
 ## Flujo validado
 
-1. crea una sesión con `prefixes: ['--color-']`
+1. crea una sesión explícita con `prefixes: ['--color-']`
 2. edita colores desde inputs nativos
 3. exporta CSS y JSON desde memoria
 4. carga el overlay browser con import dinámico solo en `localhost`
@@ -52,3 +52,5 @@ Este sample sirve como base para:
 - validación manual del core
 - smoke tests reales con Playwright
 - depuración rápida del overlay browser
+
+> Importante: aunque el sample actual del repo todavía tenga decisiones internas en revisión, la integración recomendada y el contrato esperado de v1 siguen siendo trabajar de forma explícita con `['--color-']` cuando quieras limitar el scope al comportamiento oficial.

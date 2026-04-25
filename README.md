@@ -7,6 +7,8 @@
 
 Framework-agnostic developer tool for discovering, editing, previewing, and exporting **runtime CSS color variables**.
 
+> Current status: the package is already functional and documented, but it still has a small set of **pre-release hardening tasks** before v1 should be considered publish-ready.
+
 ---
 
 ## Table of contents
@@ -20,6 +22,7 @@ Framework-agnostic developer tool for discovering, editing, previewing, and expo
 - [Browser API](#browser-api)
 - [Production guard](#production-guard)
 - [Security notes](#security-notes)
+- [Known pre-release gaps](#known-pre-release-gaps)
 - [Supported formats](#supported-formats)
 - [Integration samples](#integration-samples)
 - [Repository scripts](#repository-scripts)
@@ -71,6 +74,8 @@ This package does **not**:
 | `@inume/css-vars-devtools/browser` | Browser overlay on top of the session API |
 
 > No deep imports are supported.
+
+> The intended public API surface for v1 is exactly the two entrypoints above.
 
 ---
 
@@ -131,7 +136,7 @@ Creates a headless session bound to a `Document` target.
 | Option | Type | Notes |
 |---|---|---|
 | `target` | `Document` | Defaults to the global `document` when available |
-| `prefixes` | `string[]` | Replaces the default `--color-` prefix set |
+| `prefixes` | `string[]` | Replaces the intended default `--color-` prefix set |
 | `include` | `string[]` | Exact custom property names to include |
 | `exclude` | `string[]` | Exact custom property names to exclude |
 | `match` | `(name: string) => boolean` | Final filter step |
@@ -239,6 +244,18 @@ Loopback hosts accepted by `strict`:
 - dangerous tokens like `url(`, `expression(`, `@`, `;`, and CSS comments are rejected from public exports
 - downloads use sanitized filenames with a fixed extension
 - copy and download only happen from explicit user interaction
+
+---
+
+## Known pre-release gaps
+
+The project is functional, but these points are still being hardened before release:
+
+- the implementation/tests still need final alignment with the v1 default discovery scope (`--color-*`)
+- browser teardown still needs final cleanup hardening for some global listeners/lifecycle paths
+- some overlay status messages are not fully localized yet
+- the React integration guidance should always destroy the mounted handle on cleanup
+- the overlay works well today, but some hot interaction paths still have performance headroom
 
 ---
 

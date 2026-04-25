@@ -9,6 +9,7 @@
 - [State and lifecycle](#state-and-lifecycle)
 - [Browser overlay responsibilities](#browser-overlay-responsibilities)
 - [Validation and export pipeline](#validation-and-export-pipeline)
+- [Current pre-release gaps](#current-pre-release-gaps)
 - [Testing strategy](#testing-strategy)
 
 ---
@@ -21,6 +22,8 @@
 2. an optional **browser overlay** for dev-only interaction
 
 This keeps the state model reusable while isolating UI, storage, and browser-only concerns.
+
+> Current status: the high-level separation is correct, but there are still some **pre-release alignment gaps** between the v1 spec and the current implementation.
 
 ---
 
@@ -87,12 +90,15 @@ src/
 - current values live in memory
 - `resetVar()` and `resetAll()` restore the baseline
 - `destroy()` makes the session inert
+- the intended v1 default scope is `--color-*`
 
 ### Browser handle
 
 - may own its session or consume an external one
 - unmounts overlay resources on `destroy()`
 - keeps browser-only concerns out of the core
+
+> The architectural intent is full teardown on `destroy()`. That lifecycle symmetry is part of the remaining browser hardening before release.
 
 ---
 
@@ -108,6 +114,14 @@ Current browser responsibilities implemented in code:
 - opt-in persistence
 - locale resolution and message merging
 - production guard evaluation before mounting
+
+The overlay runtime is intentionally limited to:
+
+- TypeScript
+- vanilla DOM APIs
+- Shadow DOM
+
+No framework adapter or runtime UI framework is part of the browser architecture.
 
 ---
 
@@ -137,12 +151,39 @@ It rejects dangerous tokens such as:
 
 ---
 
+## Current pre-release gaps
+
+These are known architecture-relevant gaps that still need alignment before release:
+
+1. **Discovery default scope**
+   - The v1 spec requires the default scope to be `--color-*`.
+   - The current implementation/tests are still broader than that contract.
+
+2. **Public package surface**
+   - The intended public API is limited to `@inume/css-vars-devtools` and `@inume/css-vars-devtools/browser`.
+   - The package currently also exports `./package.json`, which should be treated as an explicit release decision, not an accidental default.
+
+3. **Browser teardown hardening**
+   - The architectural intent is full cleanup of browser-owned resources on `destroy()`.
+   - Global listeners and drag-related teardown are still part of release hardening.
+
+4. **Overlay hot paths**
+   - The current overlay works correctly functionally, but some interaction paths still do more DOM work than ideal during pointer-driven updates.
+   - This is a performance concern, not a layer-boundary failure.
+
+---
+
 ## Testing strategy
 
 | Level | Tool | Scope |
 |---|---|---|
 | Unit / contract | Vitest + happy-dom | core logic, browser contracts, overlay behaviors |
 | Real browser smoke | Playwright | discovery, copy, download, overlay basics through `examples/vanilla` |
+
+Important current gap in test intent:
+
+- the suite still needs stronger contract coverage for the default `--color-*` discovery behavior
+- browser teardown and integration cleanup deserve explicit coverage before release
 
 Current scripts:
 

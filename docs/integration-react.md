@@ -14,6 +14,7 @@ import { useEffect } from 'react'
 export function App() {
   useEffect(() => {
     let cancelled = false
+    let handle
 
     async function mountDevtool() {
       if (!import.meta.env.DEV || typeof window === 'undefined') {
@@ -25,7 +26,7 @@ export function App() {
         return
       }
 
-      mountCssVarsDevtool({
+      handle = mountCssVarsDevtool({
         prefixes: ['--color-'],
         locale: 'auto',
         productionGuard: 'strict'
@@ -35,6 +36,7 @@ export function App() {
     void mountDevtool()
     return () => {
       cancelled = true
+      handle?.destroy()
     }
   }, [])
 
@@ -48,6 +50,7 @@ export function App() {
 
 - monta el overlay una sola vez por app
 - mantén el import dinámico dentro del efecto
+- destruye el handle en el cleanup del efecto
 - no lo conviertas en un componente productivo del árbol UI
 
 ---

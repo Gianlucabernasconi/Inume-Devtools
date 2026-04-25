@@ -20,14 +20,14 @@
 
 ## Resumen ejecutivo
 
-**Estado general:** producto funcional con overlay browser rediseñado y sample realista todavía en ajuste.
+**Estado general:** producto funcional con overlay browser real, pero con **hardening pre-release pendiente** antes de publicar v1.
 
 El proyecto ya salió de la etapa de documentación-only y hoy tiene:
 
 - scaffold de paquete npm
 - entrypoints públicos definidos
 - core headless funcional
-- discovery por custom properties reales cuyo valor runtime sea color
+- discovery one-shot funcional, pero con una desalineación detectada entre spec y comportamiento default
 - export CSS/JSON funcional
 - tests dirigidos del core
 - sample `vanilla` en proceso de corrección para reflejar uso real del producto
@@ -35,8 +35,10 @@ El proyecto ya salió de la etapa de documentación-only y hoy tiene:
 
 Todavía **no** están cerrados del todo:
 
+- alineación final del contrato público con la especificación v1
 - publicación final
 - endurecimiento final del sample de prueba para eliminar hardcodes remanentes
+- limpieza final de lifecycle/performance del overlay browser
 
 ---
 
@@ -84,14 +86,14 @@ Cuando se cierre una tarea importante, actualizar:
 
 ### Etapa real del proyecto
 
-El proyecto está en **fase avanzada de producto**, con el overlay browser ya rediseñado y ajustes importantes todavía abiertos en el sample.
+El proyecto está en **fase avanzada de producto**, con el overlay browser ya rediseñado, pero con una tanda de **correcciones contractuales y de hardening** todavía abiertas antes de release.
 
 Más concretamente:
 
 - **Infraestructura base:** lista
 - **Core headless:** funcional
 - **Browser/UI real:** funcional
-- **Release v1:** lejos todavía
+- **Release v1:** cerca en funcionalidad, pero no listo para publicar sin hardening adicional
 
 ### Evidencia actual en el repo
 
@@ -106,12 +108,14 @@ Más concretamente:
 #### Core implementado
 
 - discovery one-shot sobre `Document`
-- discovery de cualquier custom property real cuyo valor runtime sea color
+- discovery actual implementado sobre custom properties reales cuyo valor runtime sea color
 - filtros por `prefixes`, `include`, `exclude`, `match`
 - baseline inmutable por sesión
 - `setVar()`, `resetVar()`, `resetAll()`, `destroy()`
 - `exportCss()` y `exportJson()` desde estado en memoria
 - validación de valores exportables y soporte raw controlado con `allowRaw`
+
+> **Gap verificado:** la especificación v1 exige que el default sea `--color-*`, pero la implementación actual y sus tests todavía no están alineados con ese contrato.
 
 #### Browser implementado
 
@@ -128,6 +132,8 @@ Más concretamente:
 - acción visible `Copy CSS` con feedback contextual
 - eliminación de elementos superfluos (badge dev-only, grip visual del launcher)
 
+> **Gaps verificados del browser:** todavía quedan mejoras pendientes en teardown completo de listeners globales y en performance de caminos calientes del picker/lista.
+
 #### Sample manual implementado
 
 - `examples/vanilla/index.html`
@@ -135,13 +141,34 @@ Más concretamente:
 - `examples/vanilla/styles.css`
 - `examples/vanilla/README.md`
 - sample ampliado para depender de más variables de color reales
-- todavía quedan hardcodes visuales remanentes en el sample que deben eliminarse
+- todavía quedan hardcodes visuales y decisiones de integración a endurecer para que el sample represente el contrato final del producto
 - validación manual del core usando el build de `dist/`
 
 #### Tests actuales
 
 - tests del core en `tests/core.test.ts`
 - cobertura dirigida de discovery, filtros, baseline, reset, export y `destroy()`
+
+### Hallazgos de auditoría pendientes de resolver
+
+#### Críticos para alinear v1
+
+- corregir el default de discovery a `--color-*`
+- alinear tests y documentación con ese contrato
+- revisar si `./package.json` debe seguir expuesto como subpath público
+
+#### Importantes antes de release
+
+- cerrar teardown completo del overlay (`pointerdown` global y drag del launcher)
+- evitar trabajo DOM excesivo en `pointermove` del color picker
+- corregir documentación/integración React para destruir correctamente el handle
+- completar i18n de mensajes de estado visibles del overlay
+
+#### Hardening recomendado
+
+- endurecer la combinación `allowRaw + storage`
+- ampliar `.gitignore` para artefactos locales de validación y screenshots
+- mejorar accesibilidad básica de inputs y picker
 
 ---
 
@@ -194,13 +221,13 @@ Más concretamente:
 - [x] target oficial sobre `Document`
 - [x] uso de `documentElement`
 - [x] discovery one-shot
-- [x] filtro por prefijos por defecto `--color-*`
+- [-] filtro por prefijos por defecto `--color-*`
 - [x] soporte de `include`
 - [x] soporte de `exclude`
 - [x] soporte de `match`
 - [x] mapa estable de baseline
 
-**Estado de fase:** completada.
+**Estado de fase:** iniciada pero no cerrada; la implementación actual no está completamente alineada con el default contractual de v1.
 
 ---
 
@@ -382,22 +409,20 @@ Más concretamente:
 
 La siguiente fase lógica del proyecto es:
 
-### **Fase 18 — Publicación**
+### **Hardening pre-release**
 
 Motivo:
 
-- es la siguiente fase definida por la especificación
-- la documentación ya quedó cerrada
-- `npm pack` ya fue validado e inspeccionado
-- el siguiente gap real es preparar la publicación final del paquete
+- aunque `npm pack` ya fue validado, todavía hay desalineaciones entre spec, tests y código en puntos de contrato público
+- publicar sin corregir esos puntos fijaría una API/comportamiento v1 equivocado
+- los siguientes gaps reales están en hardening contractual, lifecycle del browser y documentación de integración
 
 Después de eso, la prioridad correcta sería:
 
-1. hardening final
-2. release checklist
-3. publicación efectiva
-4. mantenimiento post-v1
-5. iteración de v1.x
+1. release checklist
+2. publicación efectiva
+3. mantenimiento post-v1
+4. iteración de v1.x
 
 ---
 
