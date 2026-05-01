@@ -10,7 +10,7 @@ Para Vite, el patrón recomendado es un **import dinámico dev-only** desde un m
 
 ```ts
 if (import.meta.env.DEV && typeof window !== 'undefined') {
-  const { mountCssVarsDevtool } = await import('inume-devtools/browser')
+  const { mountCssVarsDevtool } = await import('@inume/css-vars-devtools/browser')
 
   mountCssVarsDevtool({
     prefixes: ['--color-'],
@@ -33,5 +33,15 @@ Opciones comunes:
 
 ## Consideraciones
 
-- no importes `inume-devtools/browser` en top-level si quieres mantener la separación dev-only
+- no importes `@inume/css-vars-devtools/browser` en top-level si quieres mantener la separación dev-only
 - `productionGuard` es complementario, no sustituto del guard de Vite
+
+---
+
+## Sample del repo
+
+Ver:
+
+- `examples/vite/index.html`
+- `examples/vite/main.js`
+- `examples/vite/styles.css`

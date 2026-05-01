@@ -1,4 +1,4 @@
-# Quick start — `inume-devtools`
+# Quick start — `@inume/css-vars-devtools`
 
 > Versión corta en español del uso actual del paquete.
 
@@ -30,7 +30,7 @@ Permite:
 ## Instalación
 
 ```bash
-npm install inume-devtools
+npm install @inume/css-vars-devtools
 ```
 
 ---
@@ -38,7 +38,7 @@ npm install inume-devtools
 ## Uso headless
 
 ```ts
-import { createCssVarsSession } from 'inume-devtools'
+import { createCssVarsSession } from '@inume/css-vars-devtools'
 
 const session = createCssVarsSession({
   prefixes: ['--color-']
@@ -58,7 +58,7 @@ Patrón recomendado:
 
 ```ts
 if (import.meta.env.DEV && typeof window !== 'undefined') {
-  const { mountCssVarsDevtool } = await import('inume-devtools/browser')
+  const { mountCssVarsDevtool } = await import('@inume/css-vars-devtools/browser')
 
   mountCssVarsDevtool({
     prefixes: ['--color-'],
@@ -82,6 +82,7 @@ if (import.meta.env.DEV && typeof window !== 'undefined') {
 
 ## Guías relacionadas
 
+- [`integration-vanilla.md`](integration-vanilla.md)
 - [`integration-vite.md`](integration-vite.md)
 - [`integration-react.md`](integration-react.md)
 - [`integration-nuxt.md`](integration-nuxt.md)

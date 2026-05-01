@@ -14,7 +14,7 @@ export default defineNuxtPlugin(async () => {
     return
   }
 
-  const { mountCssVarsDevtool } = await import('inume-devtools/browser')
+  const { mountCssVarsDevtool } = await import('@inume/css-vars-devtools/browser')
 
   mountCssVarsDevtool({
     prefixes: ['--color-'],
@@ -37,3 +37,13 @@ export default defineNuxtPlugin(async () => {
 - `.client` evita SSR para el plugin
 - `import.meta.dev` mantiene la integración fuera de producción
 - el overlay sigue siendo un concern del navegador, no de Nitro ni del server runtime
+
+---
+
+## Sample del repo
+
+Ver:
+
+- `examples/nuxt/app.vue`
+- `examples/nuxt/plugins/css-vars-devtools.client.ts`
+- `examples/nuxt/assets/css/main.css`

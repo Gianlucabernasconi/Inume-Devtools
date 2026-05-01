@@ -2,41 +2,55 @@
 
 ## Resumen
 
-Si tu proyecto no usa framework, la integración recomendada es exactamente la misma idea base:
+La integración `vanilla` es la referencia más directa del repo porque usa:
 
-- crear la sesión sobre `document`
-- limitar el scope con `prefixes` cuando corresponda
-- montar el overlay browser solo en desarrollo
+- un documento HTML simple
+- CSS vars en `:root`
+- `createCssVarsSession()` de forma explícita
+- import dinámico del entry `browser`
 
 ---
 
-## Snippet recomendado
+## Archivos del sample
 
-```html
-<script type="module">
-  import { createCssVarsSession } from 'inume-devtools'
+| Archivo | Rol |
+|---|---|
+| `examples/vanilla/index.html` | UI manual de prueba |
+| `examples/vanilla/app.js` | Session headless + acciones manuales |
+| `examples/vanilla/styles.css` | Variables y estilos de preview |
 
-  const session = createCssVarsSession({ prefixes: ['--color-'] })
+---
 
-  if (location.hostname === 'localhost' || location.hostname === '127.0.0.1') {
-    const { mountCssVarsDevtool } = await import('inume-devtools/browser')
+## Flujo validado
 
-    mountCssVarsDevtool({
-      session,
-      locale: 'auto',
-      productionGuard: 'strict'
-    })
-  }
+1. crea una sesión explícita con `prefixes: ['--color-']`
+2. edita colores desde inputs nativos
+3. exporta CSS y JSON desde memoria
+4. carga el overlay browser con import dinámico solo en `localhost`
 
-  window.devtoolSession = session
-</script>
+---
+
+## Ejemplo clave
+
+```js
+import { createCssVarsSession } from '../../dist/index.js'
+
+const session = createCssVarsSession({ prefixes: ['--color-'] })
+
+if (typeof window !== 'undefined' && window.location.hostname === 'localhost') {
+  const { mountCssVarsDevtool } = await import('../../dist/browser.js')
+  mountCssVarsDevtool({ prefixes: ['--color-'], productionGuard: 'strict' })
+}
 ```
 
 ---
 
-## Consideraciones
+## Uso recomendado
 
-- usa import dinámico para mantener el overlay fuera de producción
-- `productionGuard` complementa, pero no reemplaza, ese guard de desarrollo
-- el target oficial de v1 es `document.documentElement` / `:root`
-- `exportCss()` y `exportJson()` salen del estado en memoria de la sesión
+Este sample sirve como base para:
+
+- validación manual del core
+- smoke tests reales con Playwright
+- depuración rápida del overlay browser
+
+> Importante: aunque el sample actual del repo todavía tenga decisiones internas en revisión, la integración recomendada y el contrato esperado de v1 siguen siendo trabajar de forma explícita con `['--color-']` cuando quieras limitar el scope al comportamiento oficial.

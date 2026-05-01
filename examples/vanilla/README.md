@@ -8,7 +8,7 @@ Sample mínimo para validar manualmente el core headless sobre un documento HTML
 - edición runtime de `--color-*`
 - `resetVar()` y `resetAll()`
 - `exportCss()` y `exportJson()` desde memoria
-- patrón oficial de import dinámico para `inume-devtools/browser`
+- patrón oficial de import dinámico para `@inume/css-vars-devtools/browser`
 
 ## Cómo usarlo
 

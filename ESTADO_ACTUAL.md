@@ -1,6 +1,6 @@
 # Estado actual del proyecto
 
-> Documento operativo para seguir el avance de `inume-devtools`.
+> Documento operativo para seguir el avance de `@inume/css-vars-devtools`.
 >
 > **Regla de uso:** cada vez que se termine una tarea relevante, este archivo debe actualizarse en el mismo cambio o commit.
 
@@ -119,7 +119,7 @@ Más concretamente:
 
 #### Browser implementado
 
-- entry `inume-devtools/browser` existe
+- entry `@inume/css-vars-devtools/browser` existe
 - import SSR-safe e inert al importarse
 - `mountCssVarsDevtool()` existe
 - `productionGuard` base existe
@@ -156,7 +156,6 @@ Más concretamente:
 - documentación alineada con discovery amplio por valor runtime color
 - tests contractuales protegen discovery amplio y filtros de narrowing
 - `npm pack --dry-run` verifica que no se publican `examples/` y que la superficie publicable queda acotada
-- README y guías públicas reescritos con foco en usuario final y sin exponer la landing de prueba como parte del producto publicado
 
 #### Importantes antes de release
 
