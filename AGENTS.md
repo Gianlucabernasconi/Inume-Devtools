@@ -32,7 +32,8 @@
 
 - Baseline inmutable por sesión.
 - Discovery snapshot único al crear la sesión; sin refresh automático, observers ni re-scans reactivos en v1.
-- El default contractual de discovery en v1 es `--color-*`; no ampliar por defecto a custom properties arbitrarias.
+- El default contractual de discovery en v1 es amplio por valor runtime: incluir custom properties cuyo valor computado sea color.
+- `prefixes`, `include`, `exclude` y `match` son filtros para acotar o ajustar ese scope, no prueba de que `--color-*` sea el default obligatorio.
 - `resetVar()` y `resetAll()` vuelven al baseline de esa sesión.
 - `destroy()` deja contratos estables de no-op/vacíos; no inventar side effects extra.
 - El export público sale del estado en memoria de la sesión, no releyendo el DOM.
@@ -68,7 +69,7 @@ if (import.meta.env.DEV && typeof window !== 'undefined') {
 - No asumir que la fase activa es siempre “publicar” solo porque ya exista build funcional.
 - Si hay conflicto entre spec, tests, docs y comportamiento real, primero manda el hardening del contrato público.
 - Antes de publicar, revisar explícitamente:
-  - default real de discovery vs spec `--color-*`
+  - documentación y tests alineados con discovery amplio por valor runtime color
   - cantidad real de entrypoints públicos exportados
   - teardown completo de listeners/browser resources en `destroy()`
   - documentación de integración alineada con el comportamiento real del código
@@ -84,7 +85,7 @@ if (import.meta.env.DEV && typeof window !== 'undefined') {
 - No persistir automáticamente en cada cambio visual.
 - No escanear el DOM constantemente.
 - No agregar callbacks, event bus, plugin API, adapters ni `matchAll` en v1.
-- No ampliar v1 a custom properties arbitrarias: el default correcto es `--color-*`.
+- No confundir discovery amplio con editor universal: el default amplio sigue filtrando por valor runtime de color y no debe incluir custom properties no color.
 
 ## Seguimiento de avance obligatorio
 

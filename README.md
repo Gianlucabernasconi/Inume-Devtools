@@ -136,11 +136,13 @@ Creates a headless session bound to a `Document` target.
 | Option | Type | Notes |
 |---|---|---|
 | `target` | `Document` | Defaults to the global `document` when available |
-| `prefixes` | `string[]` | Replaces the intended default `--color-` prefix set |
+| `prefixes` | `string[]` | Narrows discovery to custom property names with these prefixes |
 | `include` | `string[]` | Exact custom property names to include |
 | `exclude` | `string[]` | Exact custom property names to exclude |
 | `match` | `(name: string) => boolean` | Final filter step |
 | `allowRaw` | `boolean` | Allows non-exportable working values in memory |
+
+By default, discovery is broad by runtime value: it includes CSS custom properties whose computed value is recognized as a color. Use `prefixes` when you want to narrow that scope, for example to `['--color-']`.
 
 #### Session methods
 
@@ -251,7 +253,7 @@ Loopback hosts accepted by `strict`:
 
 The project is functional, but these points are still being hardened before release:
 
-- the implementation/tests still need final alignment with the v1 default discovery scope (`--color-*`)
+- documentation and tests must keep discovery broad by runtime color value as the default contract
 - browser teardown still needs final cleanup hardening for some global listeners/lifecycle paths
 - some overlay status messages are not fully localized yet
 - the React integration guidance should always destroy the mounted handle on cleanup

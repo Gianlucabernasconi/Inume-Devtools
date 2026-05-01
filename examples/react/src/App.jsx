@@ -3,6 +3,7 @@ import { useEffect } from 'react'
 export default function App() {
   useEffect(() => {
     let cancelled = false
+    let handle
 
     async function mountDevtool() {
       if (!import.meta.env.DEV || typeof window === 'undefined') {
@@ -14,7 +15,7 @@ export default function App() {
         return
       }
 
-      mountCssVarsDevtool({
+      handle = mountCssVarsDevtool({
         prefixes: ['--color-'],
         locale: 'auto',
         productionGuard: 'strict'
@@ -25,6 +26,7 @@ export default function App() {
 
     return () => {
       cancelled = true
+      handle?.destroy()
     }
   }, [])
 

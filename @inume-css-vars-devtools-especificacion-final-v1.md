@@ -895,8 +895,7 @@ Shape aproximado de `package.json`:
       "types": "./dist/browser.d.ts",
       "import": "./dist/browser.js",
       "require": "./dist/browser.cjs"
-    },
-    "./package.json": "./package.json"
+    }
   },
   "files": ["dist", "README.md", "LICENSE"]
 }
@@ -908,6 +907,7 @@ Reglas de packaging:
 - no publicar fuentes innecesarias
 - no soportar deep imports
 - tipados por entrypoint
+- solo dos subpaths públicos: `.` y `./browser`
 - side effects precisos
 - el entry `browser` no debe importar CSS ni ejecutar side effects al importarse
 

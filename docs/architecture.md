@@ -90,7 +90,7 @@ src/
 - current values live in memory
 - `resetVar()` and `resetAll()` restore the baseline
 - `destroy()` makes the session inert
-- the intended v1 default scope is `--color-*`
+- the intended v1 default scope is broad by runtime color value
 
 ### Browser handle
 
@@ -155,13 +155,13 @@ It rejects dangerous tokens such as:
 
 These are known architecture-relevant gaps that still need alignment before release:
 
-1. **Discovery default scope**
-   - The v1 spec requires the default scope to be `--color-*`.
-   - The current implementation/tests are still broader than that contract.
+1. **Discovery contract alignment**
+   - Discovery is intentionally broad by runtime color value.
+   - Documentation and tests must keep `prefixes` framed as narrowing filters, not as the default requirement.
 
 2. **Public package surface**
-   - The intended public API is limited to `@inume/css-vars-devtools` and `@inume/css-vars-devtools/browser`.
-   - The package currently also exports `./package.json`, which should be treated as an explicit release decision, not an accidental default.
+   - The public API is limited to `@inume/css-vars-devtools` and `@inume/css-vars-devtools/browser`.
+   - `./package.json` is intentionally not exported to keep the v1 surface strict.
 
 3. **Browser teardown hardening**
    - The architectural intent is full cleanup of browser-owned resources on `destroy()`.
@@ -182,7 +182,7 @@ These are known architecture-relevant gaps that still need alignment before rele
 
 Important current gap in test intent:
 
-- the suite still needs stronger contract coverage for the default `--color-*` discovery behavior
+- the suite should keep explicit coverage for broad-by-runtime-color discovery and prefix narrowing
 - browser teardown and integration cleanup deserve explicit coverage before release
 
 Current scripts:

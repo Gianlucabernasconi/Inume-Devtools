@@ -7,6 +7,7 @@ function setupDocument(): Document {
   document.documentElement.style.cssText = ''
   document.documentElement.style.setProperty('--color-base', '#ffffff')
   document.documentElement.style.setProperty('--color-primary', 'rgb(0 0 0 / 1)')
+  document.documentElement.style.setProperty('--color-spacing', '16px')
   document.documentElement.style.setProperty('--bg-page', '#121826')
   document.documentElement.style.setProperty('--text-muted', '#7c89a0')
   document.documentElement.style.setProperty('--space-md', '16px')
@@ -25,6 +26,13 @@ describe('createCssVarsSession', () => {
     ])
   })
 
+  it('discovery amplio no incluye custom properties sin valor runtime de color', () => {
+    const session = createCssVarsSession({ target: setupDocument() })
+
+    expect(session.getVar('--color-spacing')).toBeUndefined()
+    expect(session.getVar('--space-md')).toBeUndefined()
+  })
+
   it('no inventa custom properties a partir de propiedades nativas del navegador', () => {
     const session = createCssVarsSession({ target: setupDocument() })
 
@@ -39,6 +47,15 @@ describe('createCssVarsSession', () => {
     })
 
     expect(session.getVars()).toEqual([])
+  })
+
+  it('prefixes acota el discovery amplio por nombre sin cambiar la validación por color', () => {
+    const session = createCssVarsSession({
+      target: setupDocument(),
+      prefixes: ['--color-']
+    })
+
+    expect(session.getVars().map((item) => item.name)).toEqual(['--color-base', '--color-primary'])
   })
 
   it('respeta include y exclude', () => {
@@ -96,6 +113,26 @@ describe('createCssVarsSession', () => {
     })
     expect(session.exportCss()).not.toContain('oklch')
     expect(session.exportJson()).not.toContain('oklch')
+  })
+
+  it('rechaza colores funcionales inválidos como exportables', () => {
+    const session = createCssVarsSession({ target: setupDocument() })
+
+    session.setVar('--color-base', 'rgb(foo)')
+    session.setVar('--color-primary', 'hsl(not-a-color)')
+
+    expect(session.getVar('--color-base')?.value).toBe('#ffffff')
+    expect(session.getVar('--color-primary')?.value).toBe('rgb(0 0 0 / 1)')
+  })
+
+  it('mantiene soporte para colores funcionales válidos', () => {
+    const session = createCssVarsSession({ target: setupDocument() })
+
+    session.setVar('--color-base', 'rgba(38, 38, 38, 1)')
+    session.setVar('--color-primary', 'hsl(240 100% 50%)')
+
+    expect(session.getVar('--color-base')?.value).toBe('rgba(38, 38, 38, 1)')
+    expect(session.getVar('--color-primary')?.value).toBe('hsl(240 100% 50%)')
   })
 
   it('exporta CSS y JSON con orden estable y solo valores exportables', () => {

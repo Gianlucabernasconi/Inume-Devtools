@@ -24,6 +24,7 @@ interface OverlayController {
 
 export function createOverlay(options: OverlayOptions): OverlayController {
   const PANEL_TRANSITION_MS = 170
+  const TOGGLE_DRAG_THRESHOLD = 4
   const { session } = options
   const currentWindow = window
   const currentDocument = currentWindow.document
@@ -65,7 +66,7 @@ export function createOverlay(options: OverlayOptions): OverlayController {
   let visible = false
   let search = ''
   let selectedName: string | undefined
-  let statusText = 'Ready.'
+  let statusText = messages.ready
   let panelPosition: PersistedPanelPosition | undefined = options.initialPanelPosition
   let dragState:
     | {
@@ -78,6 +79,8 @@ export function createOverlay(options: OverlayOptions): OverlayController {
     | {
         offsetX: number
         offsetY: number
+        startX: number
+        startY: number
         moved: boolean
       }
     | undefined
@@ -109,6 +112,9 @@ export function createOverlay(options: OverlayOptions): OverlayController {
   let feedbackToastTextElement: HTMLSpanElement | undefined
   let menuOpen = false
   let closePanelTimer: number | undefined
+  let pickerFrame: number | undefined
+  let pickerMoveHandler: ((event: PointerEvent) => void) | undefined
+  let pickerUpHandler: (() => void) | undefined
   let pickerState:
     | {
         h: number
@@ -116,6 +122,9 @@ export function createOverlay(options: OverlayOptions): OverlayController {
         l: number
       }
     | undefined
+
+  const formatMessage = (message: string, values: Record<string, string>): string =>
+    Object.entries(values).reduce((result, [key, value]) => result.split(`{${key}}`).join(value), message)
 
   const stopDrag = (): void => {
     dragState = undefined
@@ -126,6 +135,7 @@ export function createOverlay(options: OverlayOptions): OverlayController {
   const stopToggleDrag = (): void => {
     currentWindow.removeEventListener('pointermove', handleTogglePointerMove)
     currentWindow.removeEventListener('pointerup', stopToggleDrag)
+    currentWindow.removeEventListener('pointercancel', stopToggleDrag)
 
     if (!toggleDragState) {
       return
@@ -134,6 +144,18 @@ export function createOverlay(options: OverlayOptions): OverlayController {
     currentWindow.setTimeout(() => {
       toggleDragState = undefined
     }, 0)
+  }
+
+  const stopPickerDrag = (): void => {
+    if (pickerMoveHandler) {
+      currentWindow.removeEventListener('pointermove', pickerMoveHandler)
+      pickerMoveHandler = undefined
+    }
+
+    if (pickerUpHandler) {
+      currentWindow.removeEventListener('pointerup', pickerUpHandler)
+      pickerUpHandler = undefined
+    }
   }
 
   const handlePointerMove = (event: PointerEvent): void => {
@@ -148,7 +170,7 @@ export function createOverlay(options: OverlayOptions): OverlayController {
     }
 
     applyPanelPosition()
-    statusText = 'Panel moved.'
+      statusText = messages.panelMoved
     updateFooter()
   }
 
@@ -163,7 +185,11 @@ export function createOverlay(options: OverlayOptions): OverlayController {
       top: clamp(event.clientY - toggleDragState.offsetY, 8, currentWindow.innerHeight - toggleRect.height - 8)
     }
 
-    toggleDragState.moved = true
+    const dx = event.clientX - toggleDragState.startX
+    const dy = event.clientY - toggleDragState.startY
+    if (Math.abs(dx) > TOGGLE_DRAG_THRESHOLD || Math.abs(dy) > TOGGLE_DRAG_THRESHOLD) {
+      toggleDragState.moved = true
+    }
     applyTogglePosition()
   }
 
@@ -176,7 +202,7 @@ export function createOverlay(options: OverlayOptions): OverlayController {
       }
 
       applyPanelPosition()
-      statusText = 'Panel re-fitted to viewport.'
+      statusText = messages.panelRefitted
       updateFooter()
     }
 
@@ -329,16 +355,44 @@ export function createOverlay(options: OverlayOptions): OverlayController {
     hueInput.value = String(Math.round(pickerState.h))
   }
 
-  function commitPickerColor(): void {
-    if (!selectedName || !colorInput || !pickerState) {
+  function commitPickerColor(renderAfterCommit = false): void {
+    if (destroyed || !selectedName || !colorInput || !pickerState) {
       return
     }
 
     const nextHex = hslToHex(pickerState.h, pickerState.s, pickerState.l)
     colorInput.value = nextHex.slice(1)
     session.setVar(selectedName, nextHex)
-    statusText = `Updated ${selectedName}.`
-    render()
+    statusText = formatMessage(messages.updated, { name: selectedName })
+    updateSelectedColorUi(selectedName, nextHex)
+
+    if (renderAfterCommit) {
+      render()
+      return
+    }
+
+    updatePickerUi()
+    updateFooter()
+  }
+
+  function schedulePickerCommit(): void {
+    if (pickerFrame !== undefined) {
+      return
+    }
+
+    pickerFrame = currentWindow.requestAnimationFrame(() => {
+      pickerFrame = undefined
+      commitPickerColor()
+    })
+  }
+
+  function updateSelectedColorUi(name: string, value: string): void {
+    selectedValueElement && (selectedValueElement.textContent = value)
+    swatchElement?.style.setProperty('--swatch-fill', value)
+
+    const row = Array.from(listElement?.querySelectorAll<HTMLButtonElement>('.row-button') ?? []).find((candidate) => candidate.dataset.varName === name)
+    const rowSwatch = row?.querySelector<HTMLElement>('.row-swatch')
+    rowSwatch?.style.setProperty('--swatch-fill', value)
   }
 
   function applyPanelPosition(): void {
@@ -469,12 +523,16 @@ export function createOverlay(options: OverlayOptions): OverlayController {
     emptyStateElement.hidden = true
 
     for (const item of items) {
-      const row = currentDocument.createElement('button')
-      row.type = 'button'
+      const row = currentDocument.createElement('div')
       row.className = 'row-button'
       if (item.name === selectedName) {
         row.classList.add('is-selected')
       }
+
+      const selectBtn = currentDocument.createElement('button')
+      selectBtn.type = 'button'
+      selectBtn.className = 'row-select'
+      selectBtn.dataset.varName = item.name
 
       const swatch = currentDocument.createElement('span')
       swatch.className = 'row-swatch'
@@ -484,17 +542,19 @@ export function createOverlay(options: OverlayOptions): OverlayController {
       name.className = 'row-name'
       name.textContent = item.name
 
-      row.append(swatch, name)
-      row.addEventListener('click', () => {
-        if (destroyed || isSessionInert()) {
-          return
-        }
+      selectBtn.append(swatch, name)
 
-        selectedName = item.name
-        statusText = `Selected ${item.name}.`
-        render()
+      const copyBtn = currentDocument.createElement('button')
+      copyBtn.type = 'button'
+      copyBtn.className = 'row-copy'
+      copyBtn.setAttribute('aria-label', messages.copyVar)
+      copyBtn.append(createIcon(currentDocument, 'copy'))
+      copyBtn.addEventListener('click', (event) => {
+        event.stopPropagation()
+        void handleCopyVar(item.name, item.value)
       })
 
+      row.append(selectBtn, copyBtn)
       listElement.append(row)
     }
   }
@@ -523,6 +583,28 @@ export function createOverlay(options: OverlayOptions): OverlayController {
     }
   }
 
+  async function handleCopyVar(name: string, value: string): Promise<void> {
+    if (destroyed || isSessionInert()) {
+      return
+    }
+
+    const clipboard = currentWindow.navigator.clipboard
+    if (!clipboard?.writeText) {
+      statusText = messages.clipboardUnavailable
+      updateFooter()
+      return
+    }
+
+    try {
+      await clipboard.writeText(`${name}: ${value};`)
+      statusText = messages.varCopied
+    } catch {
+      statusText = messages.clipboardFailed
+    }
+
+    updateFooter()
+  }
+
   async function handleCopyCss(): Promise<void> {
     if (destroyed || isSessionInert()) {
       return
@@ -530,17 +612,17 @@ export function createOverlay(options: OverlayOptions): OverlayController {
 
     const clipboard = currentWindow.navigator.clipboard
     if (!clipboard?.writeText) {
-      statusText = 'Clipboard API is not available.'
+      statusText = messages.clipboardUnavailable
       updateFooter()
       return
     }
 
     try {
       await clipboard.writeText(session.exportCss())
-      statusText = 'CSS copied to clipboard.'
+      statusText = messages.cssCopied
       options.onCommit?.('copyCss', { panelPosition })
     } catch {
-      statusText = 'Clipboard copy failed.'
+      statusText = messages.clipboardFailed
     }
 
     updateFooter()
@@ -553,16 +635,16 @@ export function createOverlay(options: OverlayOptions): OverlayController {
 
     const clipboard = currentWindow.navigator.clipboard
     if (!clipboard?.writeText) {
-      statusText = 'Clipboard API is not available.'
+      statusText = messages.clipboardUnavailable
       updateFooter()
       return
     }
 
     try {
       await clipboard.writeText(session.exportJson())
-      statusText = 'JSON copied to clipboard.'
+      statusText = messages.jsonCopied
     } catch {
-      statusText = 'Clipboard copy failed.'
+      statusText = messages.clipboardFailed
     }
 
     closeActionMenu()
@@ -585,7 +667,7 @@ export function createOverlay(options: OverlayOptions): OverlayController {
       currentDocument
     })
 
-    statusText = extension === 'css' ? 'CSS download started.' : 'JSON download started.'
+    statusText = extension === 'css' ? messages.cssDownloadStarted : messages.jsonDownloadStarted
     closeActionMenu()
     updateFooter()
   }
@@ -638,21 +720,10 @@ export function createOverlay(options: OverlayOptions): OverlayController {
     const headerCopy = currentDocument.createElement('div')
     headerCopy.className = 'header-copy'
 
-    const headerComputed = currentWindow.getComputedStyle(root)
-    const headerSpriteAccent = headerComputed.getPropertyValue('--sprite-accent').trim() || '#7ab89a'
-    const headerSpriteEye = headerComputed.getPropertyValue('--sprite-eye').trim() || '#2a5a44'
-
-    const headerSprite = createSpriteCat(currentDocument, headerSpriteAccent, headerSpriteEye)
-    headerSprite.className = 'sprite-cat sprite-cat--header'
-
-    const titleElement = currentDocument.createElement('p')
-    titleElement.className = 'title'
-    titleElement.textContent = title
-
     const headerMeta = currentDocument.createElement('div')
     headerMeta.className = 'header-meta'
 
-    headerCopy.append(headerSprite, titleElement, headerMeta)
+    headerCopy.append(headerMeta)
 
     const closeButton = currentDocument.createElement('button')
     closeButton.type = 'button'
@@ -705,6 +776,7 @@ export function createOverlay(options: OverlayOptions): OverlayController {
     colorInput = currentDocument.createElement('input')
     colorInput.type = 'text'
     colorInput.className = 'editor-text-input'
+    colorInput.setAttribute('aria-label', messages.rawValue)
     colorInput.spellcheck = false
     colorInput.autocomplete = 'off'
     colorInput.autocapitalize = 'off'
@@ -722,7 +794,7 @@ export function createOverlay(options: OverlayOptions): OverlayController {
 
       pickerState = hexToHsl(nextHex)
       session.setVar(selectedName, nextHex)
-      statusText = `Updated ${selectedName}.`
+      statusText = formatMessage(messages.updated, { name: selectedName })
       render()
       options.onCommit?.('change', { panelPosition })
     })
@@ -761,20 +833,25 @@ export function createOverlay(options: OverlayOptions): OverlayController {
 
         pickerState.s = clamp(((pointerEvent.clientX - rect.left) / rect.width) * 100, 0, 100)
         pickerState.l = 100 - clamp(((pointerEvent.clientY - rect.top) / rect.height) * 100, 0, 100)
-        commitPickerColor()
+        schedulePickerCommit()
       }
 
       updateFromPointer(event)
+
+      stopPickerDrag()
 
       const handleMove = (moveEvent: PointerEvent): void => {
         updateFromPointer(moveEvent)
       }
 
       const handleUp = (): void => {
-        currentWindow.removeEventListener('pointermove', handleMove)
-        currentWindow.removeEventListener('pointerup', handleUp)
+        stopPickerDrag()
+        commitPickerColor(true)
         options.onCommit?.('change', { panelPosition })
       }
+
+      pickerMoveHandler = handleMove
+      pickerUpHandler = handleUp
 
       currentWindow.addEventListener('pointermove', handleMove)
       currentWindow.addEventListener('pointerup', handleUp)
@@ -787,6 +864,7 @@ export function createOverlay(options: OverlayOptions): OverlayController {
     hueInput = currentDocument.createElement('input')
     hueInput.type = 'range'
     hueInput.className = 'picker-hue'
+    hueInput.setAttribute('aria-label', messages.hue)
     hueInput.min = '0'
     hueInput.max = '360'
     hueInput.step = '1'
@@ -819,7 +897,7 @@ export function createOverlay(options: OverlayOptions): OverlayController {
       }
 
       session.resetVar(selectedName)
-      statusText = `Reset ${selectedName}.`
+      statusText = formatMessage(messages.resetDone, { name: selectedName })
       render()
       options.onCommit?.('reset', { panelPosition })
     })
@@ -830,7 +908,7 @@ export function createOverlay(options: OverlayOptions): OverlayController {
     resetAllButton.textContent = messages.resetAll
     resetAllButton.addEventListener('click', () => {
       session.resetAll()
-      statusText = 'All variables were reset.'
+      statusText = messages.resetAllDone
       render()
       options.onCommit?.('resetAll', { panelPosition })
     })
@@ -851,10 +929,11 @@ export function createOverlay(options: OverlayOptions): OverlayController {
 
     searchInput = currentDocument.createElement('input')
     searchInput.type = 'search'
+    searchInput.setAttribute('aria-label', messages.searchPlaceholder)
     searchInput.placeholder = messages.searchPlaceholder
     searchInput.addEventListener('input', () => {
       search = searchInput?.value ?? ''
-      statusText = search ? `Filtered by ${search}.` : 'Filter cleared.'
+      statusText = search ? formatMessage(messages.filteredBy, { query: search }) : messages.filterCleared
       render()
     })
 
@@ -867,6 +946,22 @@ export function createOverlay(options: OverlayOptions): OverlayController {
 
     listElement = currentDocument.createElement('div')
     listElement.className = 'list'
+    listElement.addEventListener('click', (event) => {
+      if (destroyed || isSessionInert()) {
+        return
+      }
+
+      const target = event.target
+      const selectBtn = target instanceof Element ? target.closest<HTMLButtonElement>('.row-select') : null
+      const nextName = selectBtn?.dataset.varName
+      if (!nextName) {
+        return
+      }
+
+      selectedName = nextName
+      statusText = formatMessage(messages.selected, { name: nextName })
+      render()
+    })
 
     emptyStateElement = currentDocument.createElement('div')
     emptyStateElement.className = 'empty-state'
@@ -937,7 +1032,7 @@ export function createOverlay(options: OverlayOptions): OverlayController {
     clearPersistedButton.hidden = !options.storageEnabled
     clearPersistedButton.addEventListener('click', () => {
       options.onClearPersisted?.()
-      statusText = 'Persisted state cleared.'
+      statusText = messages.persistedCleared
       closeActionMenu()
       updateFooter()
     })
@@ -968,7 +1063,7 @@ export function createOverlay(options: OverlayOptions): OverlayController {
 
     ensurePanel()
     visible = true
-    statusText = 'Panel opened.'
+    statusText = messages.panelOpened
     if (closePanelTimer) {
       clearTimeout(closePanelTimer)
       closePanelTimer = undefined
@@ -997,7 +1092,7 @@ export function createOverlay(options: OverlayOptions): OverlayController {
 
     visible = false
     closeActionMenu()
-    statusText = 'Panel hidden.'
+    statusText = messages.panelHidden
     if (closePanelTimer) {
       clearTimeout(closePanelTimer)
       closePanelTimer = undefined
@@ -1032,6 +1127,23 @@ export function createOverlay(options: OverlayOptions): OverlayController {
     show()
   }
 
+  function handleGlobalPointerDown(event: PointerEvent): void {
+    if (!menuOpen || !actionMenu || !menuButton) {
+      return
+    }
+
+    const target = event.target
+    if (!(target instanceof Node)) {
+      return
+    }
+
+    if (actionMenu.contains(target) || menuButton.contains(target)) {
+      return
+    }
+
+    closeActionMenu()
+  }
+
   function destroy(): void {
     if (destroyed) {
       return
@@ -1043,7 +1155,14 @@ export function createOverlay(options: OverlayOptions): OverlayController {
       closePanelTimer = undefined
     }
     stopDrag()
+    stopToggleDrag()
+    stopPickerDrag()
+    if (pickerFrame !== undefined) {
+      currentWindow.cancelAnimationFrame(pickerFrame)
+      pickerFrame = undefined
+    }
     currentWindow.removeEventListener('resize', handleResize)
+    currentWindow.removeEventListener('pointerdown', handleGlobalPointerDown)
     host.remove()
   }
 
@@ -1065,29 +1184,17 @@ export function createOverlay(options: OverlayOptions): OverlayController {
     toggleDragState = {
       offsetX: event.clientX - rect.left,
       offsetY: event.clientY - rect.top,
+      startX: event.clientX,
+      startY: event.clientY,
       moved: false
     }
 
     currentWindow.addEventListener('pointermove', handleTogglePointerMove)
     currentWindow.addEventListener('pointerup', stopToggleDrag)
+    currentWindow.addEventListener('pointercancel', stopToggleDrag)
   })
   currentWindow.addEventListener('resize', handleResize)
-  currentWindow.addEventListener('pointerdown', (event) => {
-    if (!menuOpen || !actionMenu || !menuButton) {
-      return
-    }
-
-    const target = event.target
-    if (!(target instanceof Node)) {
-      return
-    }
-
-    if (actionMenu.contains(target) || menuButton.contains(target)) {
-      return
-    }
-
-    closeActionMenu()
-  })
+  currentWindow.addEventListener('pointerdown', handleGlobalPointerDown)
   updateToggleButton()
   applyTogglePosition()
 
@@ -1126,6 +1233,7 @@ function createIcon(
   const appendPath = (d: string): void => {
     const path = currentDocument.createElementNS('http://www.w3.org/2000/svg', 'path')
     path.setAttribute('d', d)
+    path.setAttribute('fill', 'none')
     svg.append(path)
   }
 
@@ -1164,15 +1272,16 @@ function createIcon(
       svg.setAttribute('stroke-linecap', 'round')
       break
     case 'more':
+      svg.setAttribute('fill', 'currentColor')
       appendCircle('2', '6', '1')
       appendCircle('6', '6', '1')
       appendCircle('10', '6', '1')
       break
     case 'copy':
-      appendPath('M4 3.5h5v6H4zM2.5 2h5v1.5')
+      appendPath('M4.25 2.5h4.5M5 1.5h3a.75.75 0 0 1 .75.75v.5h.75a1 1 0 0 1 1 1v5.5a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V9.75h-.5a1 1 0 0 1-1-1v-5.5a1 1 0 0 1 1-1h.75v-.5A.75.75 0 0 1 5 1.5zm-1 2H2.5v5.5H3.5m1 1h5.25v-5.5H8.75')
       svg.setAttribute('fill', 'none')
       svg.setAttribute('stroke', 'currentColor')
-      svg.setAttribute('stroke-width', '1.1')
+      svg.setAttribute('stroke-width', '1.15')
       svg.setAttribute('stroke-linecap', 'round')
       svg.setAttribute('stroke-linejoin', 'round')
       break

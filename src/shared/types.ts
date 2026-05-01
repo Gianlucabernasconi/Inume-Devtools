@@ -13,12 +13,33 @@ export interface CssVarsMessages {
   resetAll: string
   copyCss: string
   copyJson: string
+  copyVar: string
   downloadCss: string
   downloadJson: string
   clearPersisted: string
   close: string
   open: string
   moreActions: string
+  ready: string
+  panelOpened: string
+  panelHidden: string
+  panelMoved: string
+  panelRefitted: string
+  selected: string
+  updated: string
+  resetDone: string
+  resetAllDone: string
+  filteredBy: string
+  filterCleared: string
+  clipboardUnavailable: string
+  cssCopied: string
+  jsonCopied: string
+  varCopied: string
+  clipboardFailed: string
+  cssDownloadStarted: string
+  jsonDownloadStarted: string
+  persistedCleared: string
+  hue: string
 }
 
 export interface CssVarsStorageOptions {

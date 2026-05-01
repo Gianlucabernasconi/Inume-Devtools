@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { mountCssVarsDevtool } from '../src/browser'
+import { createCssVarsSession } from '../src/index'
 
 function setupDocument(): void {
   document.body.replaceChildren()
@@ -189,6 +190,25 @@ describe('browser overlay', () => {
     expect(document.querySelector('[data-inume-css-vars-devtool-root="true"]')).toBeNull()
   })
 
+  it('destroy remueve listeners globales registrados por el overlay', () => {
+    const addSpy = vi.spyOn(window, 'addEventListener')
+    const removeSpy = vi.spyOn(window, 'removeEventListener')
+    const handle = mountCssVarsDevtool({ productionGuard: 'off', defaultOpen: true })
+
+    const globalPointerDown = addSpy.mock.calls.find(([type]) => type === 'pointerdown')?.[1]
+    expect(globalPointerDown).toBeTypeOf('function')
+
+    const { shadowRoot } = getOverlayParts()
+    const toggleButton = shadowRoot.querySelector('.toggle-button') as HTMLButtonElement
+    toggleButton.dispatchEvent(new PointerEvent('pointerdown', { clientX: 12, clientY: 12, bubbles: true }))
+
+    handle.destroy()
+
+    expect(removeSpy).toHaveBeenCalledWith('pointerdown', globalPointerDown)
+    expect(removeSpy).toHaveBeenCalledWith('pointermove', expect.any(Function))
+    expect(removeSpy).toHaveBeenCalledWith('pointerup', expect.any(Function))
+  })
+
   it('persiste cambios solo en commit valido y puede limpiar persisted state', async () => {
     window.localStorage.clear()
 
@@ -224,6 +244,48 @@ describe('browser overlay', () => {
     expect(window.localStorage.getItem('overlay-test')).toContain('#334455')
   })
 
+  it('no persiste ni restaura valores raw no exportables', async () => {
+    window.localStorage.clear()
+    const session = createCssVarsSession({ target: document, allowRaw: true })
+    session.setVar('--color-base', 'oklch(62% 0.2 240)')
+
+    Object.defineProperty(window.navigator, 'clipboard', {
+      configurable: true,
+      value: { writeText: vi.fn().mockResolvedValue(undefined) }
+    })
+
+    mountCssVarsDevtool({
+      session,
+      productionGuard: 'off',
+      defaultOpen: true,
+      storage: { kind: 'local', key: 'raw-storage' }
+    })
+
+    const { shadowRoot } = getOverlayParts()
+    const copyCssButton = shadowRoot.querySelector('.primary-button') as HTMLButtonElement
+    copyCssButton.click()
+    await waitForStorageFlush()
+
+    expect(window.localStorage.getItem('raw-storage')).toBeNull()
+
+    window.localStorage.setItem(
+      'raw-storage-restore',
+      JSON.stringify({
+        version: 1,
+        vars: { '--color-base': 'url(https://example.com/a.png)' }
+      })
+    )
+
+    mountCssVarsDevtool({
+      productionGuard: 'off',
+      defaultOpen: true,
+      allowRaw: true,
+      storage: { kind: 'local', key: 'raw-storage-restore' }
+    })
+
+    expect(document.documentElement.style.getPropertyValue('--color-base').trim()).toBe('oklch(62% 0.2 240)')
+  })
+
   it('ya no usa input color nativo en el overlay', () => {
     mountCssVarsDevtool({ productionGuard: 'off', defaultOpen: true })
 
@@ -231,6 +293,25 @@ describe('browser overlay', () => {
     expect(shadowRoot.querySelector('input[type="color"]')).toBeNull()
     expect(shadowRoot.querySelector('.picker-area')).not.toBeNull()
     expect(shadowRoot.querySelector('.picker-hue')).not.toBeNull()
+  })
+
+  it('expone labels accesibles en inputs principales', () => {
+    mountCssVarsDevtool({ productionGuard: 'off', defaultOpen: true, locale: 'es' })
+
+    const { shadowRoot } = getOverlayParts()
+    expect(shadowRoot.querySelector('.editor-text-input')?.getAttribute('aria-label')).toBe('Valor raw')
+    expect(shadowRoot.querySelector('.picker-hue')?.getAttribute('aria-label')).toBe('Tono')
+    expect(shadowRoot.querySelector('.search input')?.getAttribute('aria-label')).toBe('Buscar variable')
+  })
+
+  it('localiza estados visibles del overlay', () => {
+    mountCssVarsDevtool({ productionGuard: 'off', defaultOpen: true, locale: 'es' })
+
+    const { shadowRoot } = getOverlayParts()
+    const resetAllButton = Array.from(shadowRoot.querySelectorAll('.ghost-button')).find((button) => button.textContent === 'Resetear todo') as HTMLButtonElement
+    resetAllButton.click()
+
+    expect((shadowRoot.querySelector('.status-text') as HTMLParagraphElement).textContent).toBe('Todas las variables fueron reseteadas.')
   })
 
   it('ignora storage corrupta y restaura estado valido cuando existe', () => {

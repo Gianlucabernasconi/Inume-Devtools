@@ -1,4 +1,5 @@
 import type { CssVarItem, CssVarsDevtoolOptions, CssVarsSession, CssVarsStorageOptions } from '../shared/types'
+import { validateExportableValue } from '../shared/validate-exportable-value'
 import { STORAGE_SCHEMA_VERSION, type PersistedOverlayState, type PersistedPanelPosition } from './storage-schema'
 
 const activeImplicitKeys = new Set<string>()
@@ -55,7 +56,7 @@ export function createStorageController({ options, session, currentWindow }: Sto
   const restoredState = safeReadState(storage, key)
 
   if (restoredState) {
-    for (const [name, value] of Object.entries(restoredState.vars)) {
+    for (const [name, value] of Object.entries(restoredState.vars).filter(([, value]) => isPersistableValue(value))) {
       session.setVar(name, value)
     }
   }
@@ -183,7 +184,7 @@ function buildScopeSignature(options: CssVarsDevtoolOptions): string {
   const exclude = normalizeList(options.exclude)
 
   return encodeURIComponent(
-    [`prefixes=${prefixes.join(',') || '--color-'}`, `include=${include.join(',') || '-'}`, `exclude=${exclude.join(',') || '-'}`].join('|')
+    [`prefixes=${prefixes.join(',') || 'runtime-color'}`, `include=${include.join(',') || '-'}`, `exclude=${exclude.join(',') || '-'}`].join('|')
   )
 }
 
@@ -233,9 +234,13 @@ function isValidState(value: unknown): value is PersistedOverlayState {
 function buildPersistedState(items: CssVarItem[], panelPosition?: PersistedPanelPosition): PersistedOverlayState {
   return {
     version: STORAGE_SCHEMA_VERSION,
-    vars: Object.fromEntries(items.filter((item) => item.value !== item.baselineValue).map((item) => [item.name, item.value])),
+    vars: Object.fromEntries(items.filter((item) => item.exportable && item.value !== item.baselineValue).map((item) => [item.name, item.value])),
     panelPosition
   }
+}
+
+function isPersistableValue(value: string): boolean {
+  return validateExportableValue(value).exportable
 }
 
 function isStateEmpty(state: PersistedOverlayState): boolean {

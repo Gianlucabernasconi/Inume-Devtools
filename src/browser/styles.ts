@@ -18,6 +18,7 @@ export function getOverlayStyles(): string {
       --motion-base: 180ms;
       --ease-out: cubic-bezier(0.22, 0.8, 0.36, 1);
       --ease-press: cubic-bezier(0.3, 0, 0.2, 1);
+      font-size: 11px;
       --color-bg: #05070a;
       --color-surface: #0c1216;
       --color-surface-raised: #10171b;
@@ -75,25 +76,27 @@ export function getOverlayStyles(): string {
       bottom: 16px;
       display: inline-flex;
       align-items: center;
-      gap: 8px;
-      height: 36px;
-      padding: 0 18px 0 14px;
-      border: 1px solid rgb(122 184 154 / 0.22);
+      justify-content: center;
+      inline-size: 44px;
+      block-size: 44px;
+      padding: 0;
+      border: 1px solid rgb(226 236 232 / 0.12);
       border-radius: 999px;
       background:
-        linear-gradient(180deg, rgb(18 26 31 / 0.96), rgb(10 14 18 / 0.96)),
-        radial-gradient(circle at 18% 50%, rgb(189 163 137 / 0.10), transparent 42%);
+        radial-gradient(circle at 38% 28%, rgb(255 255 255 / 0.10), transparent 24%),
+        linear-gradient(180deg, rgb(25 30 34 / 0.98), rgb(10 12 15 / 0.98));
       color: var(--color-text-muted);
       box-shadow:
-        0 8px 20px -6px var(--color-shadow),
+        0 10px 24px -10px var(--color-shadow),
         0 1px 2px rgb(0 0 0 / 0.5),
-        inset 0 1px 0 rgb(255 255 255 / 0.04),
-        0 0 0 1px rgb(122 184 154 / 0.08),
-        0 0 6px 0 rgb(122 184 154 / 0.10);
+        inset 0 1px 0 rgb(255 255 255 / 0.08),
+        inset 0 -1px 0 rgb(0 0 0 / 0.45),
+        0 0 0 3px rgb(137 191 165 / 0.08);
       cursor: pointer;
-      font-size: 11px;
+      font-size: 1rem;
       font-weight: 500;
       letter-spacing: 0.1px;
+      overflow: hidden;
       user-select: none;
       transition:
         box-shadow var(--motion-fast) var(--ease-out),
@@ -117,11 +120,12 @@ export function getOverlayStyles(): string {
       border-color: rgb(122 184 154 / 0.45);
       color: var(--color-text);
       box-shadow:
-        0 12px 28px -8px var(--color-shadow),
+        0 14px 30px -12px var(--color-shadow),
         0 1px 2px rgb(0 0 0 / 0.55),
-        inset 0 1px 0 rgb(255 255 255 / 0.05),
-        0 0 0 1px rgb(122 184 154 / 0.10),
-        0 0 8px 0 rgb(122 184 154 / 0.14);
+        inset 0 1px 0 rgb(255 255 255 / 0.10),
+        inset 0 -1px 0 rgb(0 0 0 / 0.45),
+        0 0 0 3px rgb(137 191 165 / 0.14),
+        0 0 18px rgb(137 191 165 / 0.14);
       transform: translateY(-1px);
     }
 
@@ -130,15 +134,38 @@ export function getOverlayStyles(): string {
     }
 
     .toggle-button:active {
+      border-color: rgb(122 184 154 / 0.45);
+      color: var(--color-text);
+      box-shadow:
+        0 14px 30px -12px var(--color-shadow),
+        0 1px 2px rgb(0 0 0 / 0.55),
+        inset 0 1px 0 rgb(255 255 255 / 0.10),
+        inset 0 -1px 0 rgb(0 0 0 / 0.45),
+        0 0 0 3px rgb(137 191 165 / 0.14),
+        0 0 18px rgb(137 191 165 / 0.14);
       transform: scale(0.985);
       transition-duration: 80ms;
     }
 
+    .toggle-button:active::after {
+      opacity: 1;
+    }
+
     .toggle-button[data-state='open'] {
+      border-color: rgb(122 184 154 / 0.45);
+      color: var(--color-text);
       box-shadow:
-        0 14px 30px -8px var(--color-shadow),
-        0 0 0 3px rgb(137 191 165 / 0.18),
-        0 0 0 1px rgb(199 236 224 / 0.08) inset;
+        0 14px 30px -12px var(--color-shadow),
+        0 1px 2px rgb(0 0 0 / 0.55),
+        inset 0 1px 0 rgb(255 255 255 / 0.10),
+        inset 0 -1px 0 rgb(0 0 0 / 0.45),
+        0 0 0 3px rgb(137 191 165 / 0.14),
+        0 0 18px rgb(137 191 165 / 0.14);
+      transform: translateY(-1px);
+    }
+
+    .toggle-button[data-state='open']::after {
+      opacity: 1;
     }
 
     .search-icon {
@@ -155,10 +182,14 @@ export function getOverlayStyles(): string {
     .feedback-toast svg {
       inline-size: 12px;
       block-size: 12px;
-      fill: currentColor;
     }
 
     .toggle-text {
+      position: absolute;
+      inline-size: 1px;
+      block-size: 1px;
+      overflow: hidden;
+      clip: rect(0 0 0 0);
       white-space: nowrap;
     }
 
@@ -167,6 +198,7 @@ export function getOverlayStyles(): string {
       top: 16px;
       right: 16px;
       width: min(352px, calc(100vw - 24px));
+      max-width: calc(100vw - 24px);
       height: min(620px, calc(100vh - 24px));
       display: grid;
       grid-template-rows: auto auto auto minmax(180px, 1fr) auto;
@@ -211,12 +243,12 @@ export function getOverlayStyles(): string {
       display: flex;
       align-items: center;
       gap: 8px;
-      height: 38px;
-      padding: 0 10px 0 12px;
+      height: 28px;
+      padding: 0 8px;
       border-bottom: 1px solid rgb(98 113 122 / 0.16);
       background:
-        linear-gradient(180deg, rgb(18 25 29 / 0.96), rgb(10 16 20 / 0.96)),
-        radial-gradient(circle at 14% 50%, rgb(189 163 137 / 0.09), transparent 38%);
+        linear-gradient(180deg, rgb(14 20 24 / 0.86), rgb(9 14 18 / 0.86)),
+        radial-gradient(circle at 50% 0%, rgb(137 191 165 / 0.06), transparent 44%);
       cursor: grab;
       user-select: none;
       touch-action: none;
@@ -229,9 +261,9 @@ export function getOverlayStyles(): string {
     .header-copy {
       display: flex;
       align-items: center;
-      gap: 8px;
       min-width: 0;
       flex: 1;
+      align-self: stretch;
     }
 
     .sprite-cat {
@@ -249,15 +281,15 @@ export function getOverlayStyles(): string {
     }
 
     .sprite-cat--launcher {
-      inline-size: 20px;
-      block-size: 22px;
+      inline-size: 22px;
+      block-size: 24px;
       border-radius: 4px;
     }
 
     .title {
       margin: 0;
-      min-width: 0;
-      font-size: 12px;
+      color: var(--color-text);
+      font-size: 1.091rem;
       font-weight: 600;
       letter-spacing: 0.1px;
       white-space: nowrap;
@@ -277,10 +309,15 @@ export function getOverlayStyles(): string {
       padding: 12px 12px 14px;
       border-bottom: 1px solid rgb(98 113 122 / 0.18);
       background:
-        linear-gradient(180deg, rgb(12 18 22 / 0.98), rgb(10 15 19 / 0.98)),
-        radial-gradient(circle at 85% 0%, rgb(137 191 165 / 0.05), transparent 24%);
+        radial-gradient(circle at 90% 0%, rgb(137 191 165 / 0.11), transparent 28%),
+        radial-gradient(circle at 10% 100%, rgb(189 163 137 / 0.07), transparent 24%),
+        linear-gradient(180deg, rgb(13 19 23 / 0.98), rgb(8 13 16 / 0.98));
       display: grid;
       gap: 10px;
+      box-shadow:
+        inset 0 1px 0 rgb(255 255 255 / 0.04),
+        inset 0 -1px 0 rgb(0 0 0 / 0.32),
+        0 0 22px rgb(137 191 165 / 0.06);
     }
 
     .editor-top,
@@ -310,7 +347,10 @@ export function getOverlayStyles(): string {
       inline-size: 16px;
       block-size: 16px;
       border-radius: 4px;
-      box-shadow: 0 0 0 1px rgb(255 255 255 / 0.10), 0 0 0 3px rgb(137 191 165 / 0.20);
+      box-shadow:
+        0 0 0 1px rgb(255 255 255 / 0.12),
+        0 0 0 3px rgb(137 191 165 / 0.18),
+        0 0 18px rgb(137 191 165 / 0.16);
       flex: none;
     }
 
@@ -327,7 +367,7 @@ export function getOverlayStyles(): string {
     .selected-name {
       margin: 0;
       color: var(--color-text);
-      font-size: 11.5px;
+      font-size: 1.045rem;
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
@@ -336,7 +376,7 @@ export function getOverlayStyles(): string {
     .selected-value {
       margin: 0;
       color: var(--color-text-soft);
-      font-size: 10.5px;
+      font-size: 0.955rem;
       line-height: 1.35;
       overflow: hidden;
       text-overflow: ellipsis;
@@ -346,11 +386,17 @@ export function getOverlayStyles(): string {
     .picker-area {
       position: relative;
       height: 108px;
-      border-radius: 6px;
+      border-radius: 8px;
       overflow: hidden;
       cursor: crosshair;
-      border: 1px solid rgb(255 255 255 / 0.05);
+      border: 1px solid rgb(226 236 232 / 0.10);
       background: linear-gradient(to top, black, transparent), linear-gradient(to right, white, var(--color-accent));
+      box-shadow:
+        0 10px 24px -16px var(--color-shadow),
+        inset 0 1px 0 rgb(255 255 255 / 0.10),
+        inset 0 -1px 0 rgb(0 0 0 / 0.42),
+        0 0 0 3px rgb(137 191 165 / 0.06),
+        0 0 18px rgb(137 191 165 / 0.08);
     }
 
     .picker-thumb {
@@ -360,7 +406,10 @@ export function getOverlayStyles(): string {
       border-radius: 50%;
       border: 1.5px solid #fff;
       transform: translate(-50%, -50%);
-      box-shadow: 0 0 0 1px rgb(0 0 0 / 0.55), 0 1px 3px rgb(0 0 0 / 0.5);
+      box-shadow:
+        0 0 0 1px rgb(0 0 0 / 0.55),
+        0 1px 3px rgb(0 0 0 / 0.5),
+        0 0 12px rgb(255 255 255 / 0.26);
       pointer-events: none;
     }
 
@@ -368,12 +417,16 @@ export function getOverlayStyles(): string {
       inline-size: 100%;
       block-size: 10px;
       margin: 0;
-      border: 1px solid rgb(255 255 255 / 0.05);
+      border: 1px solid rgb(226 236 232 / 0.10);
       border-radius: 999px;
       appearance: none;
       background: linear-gradient(to right, #ff3b3b, #ffd23b, #3bff6b, #3bdfff, var(--color-accent), #a23bff, #ff3bd1, #ff3b3b);
       accent-color: #fff;
       cursor: ew-resize;
+      box-shadow:
+        inset 0 1px 0 rgb(255 255 255 / 0.12),
+        0 0 0 3px rgb(137 191 165 / 0.05),
+        0 0 14px rgb(137 191 165 / 0.08);
     }
 
     .picker-hue::-webkit-slider-thumb {
@@ -383,7 +436,9 @@ export function getOverlayStyles(): string {
       border: 1px solid rgb(0 0 0 / 0.5);
       border-radius: 2px;
       background: #fff;
-      box-shadow: 0 0 0 1px rgb(255 255 255 / 0.3);
+      box-shadow:
+        0 0 0 1px rgb(255 255 255 / 0.3),
+        0 0 12px rgb(255 255 255 / 0.20);
     }
 
     .picker-hue::-moz-range-thumb {
@@ -392,7 +447,9 @@ export function getOverlayStyles(): string {
       border: 1px solid rgb(0 0 0 / 0.5);
       border-radius: 2px;
       background: #fff;
-      box-shadow: 0 0 0 1px rgb(255 255 255 / 0.3);
+      box-shadow:
+        0 0 0 1px rgb(255 255 255 / 0.3),
+        0 0 12px rgb(255 255 255 / 0.20);
     }
 
     .editor-actions,
@@ -406,15 +463,23 @@ export function getOverlayStyles(): string {
     }
 
     .editor-actions {
+      display: grid;
+      grid-template-columns: 1fr;
       align-items: stretch;
-      justify-content: space-between;
       gap: 8px;
       margin-top: 2px;
+      min-width: 0;
     }
 
     .editor-controls {
       flex: 1;
       min-width: 0;
+    }
+
+    .editor-actions .footer-actions {
+      margin-left: 0;
+      justify-content: flex-start;
+      flex-wrap: wrap;
     }
 
     .editor-input-shell,
@@ -429,13 +494,16 @@ export function getOverlayStyles(): string {
       background: linear-gradient(180deg, rgb(8 11 14 / 0.98), rgb(5 7 10 / 0.98));
       border: 1px solid rgb(98 113 122 / 0.20);
       border-radius: 6px;
+      box-shadow:
+        inset 0 1px 0 rgb(255 255 255 / 0.04),
+        0 0 0 3px rgb(137 191 165 / 0.03);
     }
 
     .editor-input-prefix,
-    .editor-input-suffix,
-    .search-meta {
-      color: var(--color-text-soft);
-      font-size: 10px;
+      .editor-input-suffix,
+      .search-meta {
+        color: var(--color-text-soft);
+        font-size: 0.909rem;
       text-transform: uppercase;
       letter-spacing: 0.5px;
       white-space: nowrap;
@@ -443,14 +511,14 @@ export function getOverlayStyles(): string {
     }
 
     .editor-text-input,
-    .search input {
-      inline-size: 100%;
-      min-width: 0;
-      border: 0;
-      outline: 0;
-      background: transparent;
-      color: var(--color-text);
-      font-size: 11.5px;
+      .search input {
+        inline-size: 100%;
+        min-width: 0;
+        border: 0;
+        outline: 0;
+        background: transparent;
+        color: var(--color-text);
+        font-size: 1.045rem;
       padding: 0;
     }
 
@@ -487,10 +555,17 @@ export function getOverlayStyles(): string {
     }
 
     .ghost-button:hover,
-    .close-button:hover,
     .action-menu .ghost-button:hover {
       background: rgb(226 236 232 / 0.045);
       border-color: rgb(226 236 232 / 0.12);
+      transform: translateY(-1px);
+    }
+
+    .close-button:hover {
+      color: var(--color-text);
+      border-color: rgb(137 191 165 / 0.24);
+      background: rgb(137 191 165 / 0.08);
+      box-shadow: 0 0 12px rgb(137 191 165 / 0.10);
       transform: translateY(-1px);
     }
 
@@ -511,9 +586,10 @@ export function getOverlayStyles(): string {
     .ghost-button {
       block-size: 24px;
       padding: 0 8px;
-      font-size: 11px;
+      font-size: 1rem;
       font-weight: 500;
       letter-spacing: 0.1px;
+      min-width: 0;
       white-space: nowrap;
     }
 
@@ -523,8 +599,9 @@ export function getOverlayStyles(): string {
       background: var(--color-accent);
       border-color: rgb(137 191 165 / 0.42);
       color: #05070a;
-      font-size: 11.5px;
+      font-size: 1.045rem;
       font-weight: 600;
+      min-width: 0;
       box-shadow:
         0 10px 20px -10px rgb(137 191 165 / 0.55),
         inset 0 1px 0 rgb(255 255 255 / 0.18);
@@ -547,11 +624,13 @@ export function getOverlayStyles(): string {
     }
 
     .close-button {
-      inline-size: 22px;
-      block-size: 22px;
+      inline-size: 20px;
+      block-size: 20px;
       padding: 0;
-      border-color: transparent;
-      color: var(--color-text-soft);
+      border-color: rgb(226 236 232 / 0.12);
+      background: rgb(226 236 232 / 0.045);
+      color: var(--color-text-muted);
+      box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.05);
       flex: none;
     }
 
@@ -580,18 +659,15 @@ export function getOverlayStyles(): string {
     .row-button {
       display: flex;
       align-items: center;
-      gap: 9px;
+      gap: 0;
       inline-size: 100%;
       min-width: 0;
       block-size: 28px;
-      padding: 0 10px;
+      padding: 0;
       border: 0;
       border-left: 2px solid transparent;
       border-radius: 0;
       background: transparent;
-      color: inherit;
-      cursor: pointer;
-      text-align: left;
       transition: background var(--motion-fast) ease;
     }
 
@@ -609,6 +685,51 @@ export function getOverlayStyles(): string {
       color: var(--color-text);
     }
 
+    .row-select {
+      display: flex;
+      align-items: center;
+      gap: 9px;
+      flex: 1;
+      min-width: 0;
+      block-size: 100%;
+      padding: 0 10px;
+      border: 0;
+      border-radius: 0;
+      background: transparent;
+      color: inherit;
+      cursor: pointer;
+      text-align: left;
+    }
+
+    .row-copy {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      inline-size: 32px;
+      block-size: 100%;
+      padding: 0;
+      border: 0;
+      border-radius: 0;
+      background: transparent;
+      color: var(--color-text-soft);
+      cursor: pointer;
+      opacity: 0;
+      transition: opacity var(--motion-fast) ease, color var(--motion-fast) ease;
+    }
+
+    .row-button:hover .row-copy {
+      opacity: 1;
+    }
+
+    .row-copy:hover {
+      color: var(--color-text);
+    }
+
+    .row-copy svg {
+      inline-size: 18px;
+      block-size: 18px;
+    }
+
     .row-swatch {
       --swatch-fill: var(--color-surface);
       inline-size: 12px;
@@ -621,7 +742,7 @@ export function getOverlayStyles(): string {
     .row-name {
       flex: 1;
       min-width: 0;
-      font-size: 11px;
+      font-size: 1rem;
       font-weight: 400;
       color: rgb(226 236 232 / 0.66);
       white-space: nowrap;
@@ -638,16 +759,16 @@ export function getOverlayStyles(): string {
     }
 
     .empty-copy,
-    .status-text {
-      margin: 0;
-      font-size: 11px;
+      .status-text {
+        margin: 0;
+        font-size: 1rem;
       line-height: 1.35;
     }
 
     .footer {
       display: flex;
+      justify-content: flex-end;
       align-items: center;
-      justify-content: space-between;
       gap: 8px;
       padding: 8px 10px;
       border-top: 1px solid rgb(98 113 122 / 0.16);
@@ -655,20 +776,18 @@ export function getOverlayStyles(): string {
         linear-gradient(180deg, rgb(12 18 22 / 0.98), rgb(10 15 19 / 0.98)),
         radial-gradient(circle at 80% 100%, rgb(189 163 137 / 0.06), transparent 28%);
       position: relative;
+      min-width: 0;
     }
 
     .status-text {
-      flex: 1;
-      min-width: 0;
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
+      display: none;
     }
 
     .footer-actions {
       margin-left: auto;
       position: relative;
-      flex: none;
+      min-width: 0;
+      max-width: 100%;
     }
 
     .menu-button {
@@ -701,29 +820,29 @@ export function getOverlayStyles(): string {
     }
 
     .action-menu .ghost-button {
-      justify-content: flex-start;
-      inline-size: 100%;
-      min-height: 26px;
-      padding: 0 8px;
-      border: 0;
-      border-radius: 4px;
-      font-size: 11.5px;
+        justify-content: flex-start;
+        inline-size: 100%;
+        min-height: 26px;
+        padding: 0 8px;
+        border: 0;
+        border-radius: 4px;
+        font-size: 1.045rem;
       color: var(--color-text-muted);
     }
 
     .feedback-toast {
-      position: absolute;
-      right: 10px;
-      bottom: 52px;
-      display: inline-flex;
-      align-items: center;
-      gap: 6px;
-      padding: 6px 10px;
-      border: 1px solid rgb(199 236 224 / 0.28);
-      border-radius: 6px;
-      background: linear-gradient(180deg, rgb(199 236 224 / 0.10), rgb(137 191 165 / 0.08));
-      color: var(--color-highlight);
-      font-size: 11px;
+        position: absolute;
+        right: 10px;
+        bottom: 52px;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 6px 10px;
+        border: 1px solid rgb(199 236 224 / 0.28);
+        border-radius: 6px;
+        background: linear-gradient(180deg, rgb(199 236 224 / 0.10), rgb(137 191 165 / 0.08));
+        color: var(--color-highlight);
+        font-size: 1rem;
       box-shadow: 0 6px 18px -4px rgb(0 0 0 / 0.65);
       white-space: nowrap;
     }
@@ -741,6 +860,7 @@ export function getOverlayStyles(): string {
       .primary-button,
       .close-button,
       .row-button,
+      .row-copy,
       .search-field,
       .editor-input-shell {
         transition-duration: 0.01ms !important;
@@ -767,6 +887,88 @@ export function getOverlayStyles(): string {
 
       .status-text {
         max-width: 120px;
+      }
+
+    }
+
+    @media (min-width: 2560px) {
+      .overlay-root {
+        font-size: 14px;
+      }
+
+      .toggle-button {
+        right: 32px;
+        bottom: 32px;
+        inline-size: 56px;
+        block-size: 56px;
+      }
+
+      .sprite-cat--launcher {
+        inline-size: 28px;
+        block-size: 30px;
+      }
+
+      .panel {
+        top: 32px;
+        right: 32px;
+        width: min(520px, calc(100vw - 64px));
+        height: min(900px, calc(100vh - 64px));
+      }
+
+      .header {
+        padding: 0 14px;
+      }
+
+      .editor {
+        padding: 14px 20px;
+      }
+
+      .search {
+        padding: 12px 20px;
+      }
+
+      .search-field {
+        height: 42px;
+      }
+
+      .list {
+        padding: 8px 12px;
+      }
+
+      .row-button {
+        min-height: 48px;
+      }
+
+      .row-select {
+        padding: 0 12px;
+      }
+
+      .row-copy {
+        inline-size: 40px;
+      }
+
+      .row-copy svg {
+        inline-size: 20px;
+        block-size: 20px;
+      }
+
+      .footer {
+        padding: 14px 20px;
+      }
+
+      .primary-button,
+      .ghost-button {
+        min-height: 36px;
+        padding: 0 14px;
+      }
+
+      .action-menu .ghost-button {
+        min-height: 38px;
+      }
+
+      .feedback-toast {
+        padding: 10px 14px;
+        bottom: 76px;
       }
     }
   `

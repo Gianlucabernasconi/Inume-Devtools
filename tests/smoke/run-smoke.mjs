@@ -83,6 +83,10 @@ async function smokeCopy(page) {
 }
 
 async function smokeDownload(page) {
+  const overlay = page.locator('[data-inume-css-vars-devtool-root="true"]')
+  await overlay.locator('.close-button').click()
+  await overlay.locator('.panel').waitFor({ state: 'hidden' })
+
   const downloadPromise = page.waitForEvent('download')
   await page.locator('#download-css-btn').click()
   const download = await downloadPromise
@@ -92,6 +96,9 @@ async function smokeDownload(page) {
 
 async function smokeOverlayBasics(page) {
   const overlay = page.locator('[data-inume-css-vars-devtool-root="true"]')
+  await overlay.locator('.toggle-button').click()
+  await overlay.locator('.panel').waitFor({ state: 'visible' })
+
   await overlay.locator('.search input').fill('text-primary')
 
   const rows = await overlay.locator('.row-button .row-name').allTextContents()

@@ -5,7 +5,7 @@ import { fileURLToPath } from 'node:url'
 
 const ROOT_DIR = resolve(fileURLToPath(new URL('../', import.meta.url)))
 const HOST = '127.0.0.1'
-const PORT = 3000
+const PORT = Number(process.env.PORT || 3000)
 
 const MIME_TYPES = {
   '.css': 'text/css; charset=utf-8',
@@ -19,6 +19,13 @@ const MIME_TYPES = {
 const server = createServer(async (request, response) => {
   try {
     const url = new URL(request.url ?? '/', `http://${HOST}:${PORT}`)
+
+    if (url.pathname === '/') {
+      response.writeHead(302, { Location: '/examples/vanilla/' })
+      response.end()
+      return
+    }
+
     const pathname = url.pathname.endsWith('/') ? `${url.pathname}index.html` : url.pathname
     const relativePath = normalize(pathname).replace(/^\/+/, '')
     const filePath = resolve(ROOT_DIR, relativePath)

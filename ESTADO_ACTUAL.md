@@ -27,7 +27,7 @@ El proyecto ya salió de la etapa de documentación-only y hoy tiene:
 - scaffold de paquete npm
 - entrypoints públicos definidos
 - core headless funcional
-- discovery one-shot funcional, pero con una desalineación detectada entre spec y comportamiento default
+- discovery one-shot amplio por valor runtime color
 - export CSS/JSON funcional
 - tests dirigidos del core
 - sample `vanilla` en proceso de corrección para reflejar uso real del producto
@@ -35,7 +35,7 @@ El proyecto ya salió de la etapa de documentación-only y hoy tiene:
 
 Todavía **no** están cerrados del todo:
 
-- alineación final del contrato público con la especificación v1
+- alineación final de documentación y tests con discovery amplio por valor runtime color
 - publicación final
 - endurecimiento final del sample de prueba para eliminar hardcodes remanentes
 - limpieza final de lifecycle/performance del overlay browser
@@ -108,14 +108,14 @@ Más concretamente:
 #### Core implementado
 
 - discovery one-shot sobre `Document`
-- discovery actual implementado sobre custom properties reales cuyo valor runtime sea color
+- discovery amplio implementado sobre custom properties reales cuyo valor runtime sea color
 - filtros por `prefixes`, `include`, `exclude`, `match`
 - baseline inmutable por sesión
 - `setVar()`, `resetVar()`, `resetAll()`, `destroy()`
 - `exportCss()` y `exportJson()` desde estado en memoria
 - validación de valores exportables y soporte raw controlado con `allowRaw`
 
-> **Gap verificado:** la especificación v1 exige que el default sea `--color-*`, pero la implementación actual y sus tests todavía no están alineados con ese contrato.
+> **Decisión vigente:** discovery amplio por valor runtime color es el contrato actual. `prefixes` sirve para acotar el scope cuando el host quiere limitarlo, por ejemplo a `--color-*`.
 
 #### Browser implementado
 
@@ -124,15 +124,15 @@ Más concretamente:
 - `mountCssVarsDevtool()` existe
 - `productionGuard` base existe
 - overlay real con Shadow DOM
-- launcher flotante draggable rediseñado según mockup (compacto oscuro, sin badge)
-- panel draggable rediseñado con header, editor, buscador, lista y footer alineados al mockup
-- paleta vintage tech aplicada en launcher, header, panel y botones
+- launcher flotante draggable rediseñado como badge circular oscuro con mascota centrada
+- panel draggable rediseñado con header minimal, editor, buscador, lista y footer alineados al mockup
+- paleta vintage tech aplicada en launcher, panel, editor de color y botones
 - tipografías centralizadas en variables CSS (`--font-body`, `--font-mono`)
-- sprite cat (mascota pixel art) integrado en header y launcher
+- sprite cat (mascota pixel art) integrado solo en el launcher para evitar redundancia visual
 - acción visible `Copy CSS` con feedback contextual
-- eliminación de elementos superfluos (badge dev-only, grip visual del launcher)
+- eliminación de elementos superfluos (badge dev-only, grip visual del launcher, título/gato del header y status visible del footer)
 
-> **Gaps verificados del browser:** todavía quedan mejoras pendientes en teardown completo de listeners globales y en performance de caminos calientes del picker/lista.
+> **Hardening verificado del browser:** teardown de listeners globales, drag del launcher/panel/picker y caminos calientes del picker/lista ya fueron endurecidos y validados.
 
 #### Sample manual implementado
 
@@ -141,7 +141,7 @@ Más concretamente:
 - `examples/vanilla/styles.css`
 - `examples/vanilla/README.md`
 - sample ampliado para depender de más variables de color reales
-- todavía quedan hardcodes visuales y decisiones de integración a endurecer para que el sample represente el contrato final del producto
+- integración React y smoke real de navegador alineados con el contrato actual del producto
 - validación manual del core usando el build de `dist/`
 
 #### Tests actuales
@@ -149,26 +149,27 @@ Más concretamente:
 - tests del core en `tests/core.test.ts`
 - cobertura dirigida de discovery, filtros, baseline, reset, export y `destroy()`
 
-### Hallazgos de auditoría pendientes de resolver
+### Hallazgos de auditoría resueltos para hardening pre-release
 
 #### Críticos para alinear v1
 
-- corregir el default de discovery a `--color-*`
-- alinear tests y documentación con ese contrato
-- revisar si `./package.json` debe seguir expuesto como subpath público
+- documentación alineada con discovery amplio por valor runtime color
+- tests contractuales protegen discovery amplio y filtros de narrowing
+- `npm pack --dry-run` verifica que no se publican `examples/` y que la superficie publicable queda acotada
 
 #### Importantes antes de release
 
-- cerrar teardown completo del overlay (`pointerdown` global y drag del launcher)
-- evitar trabajo DOM excesivo en `pointermove` del color picker
-- corregir documentación/integración React para destruir correctamente el handle
-- completar i18n de mensajes de estado visibles del overlay
+- teardown completo del overlay (`pointerdown` global, drag del launcher, panel y picker)
+- picker evita render completo en cada `pointermove`
+- integración React destruye correctamente el handle
+- i18n de mensajes de estado visibles del overlay completado
 
 #### Hardening recomendado
 
-- endurecer la combinación `allowRaw + storage`
-- ampliar `.gitignore` para artefactos locales de validación y screenshots
-- mejorar accesibilidad básica de inputs y picker
+- combinación `allowRaw + storage` endurecida para no persistir/restaurar valores no exportables
+- `.gitignore` ampliado para artefactos locales de validación y screenshots
+- accesibilidad básica de inputs y picker mejorada
+- rediseño visual final del overlay validado manualmente por el usuario y con `check`, `lint`, `test` y smoke real pasando
 
 ---
 
@@ -196,8 +197,8 @@ Más concretamente:
 - [x] `CssVarsDevtoolBrowserOptions`
 - [x] `CssVarsDevtoolOptions`
 - [x] `CssVarsDevtoolHandle`
-- [x] re-export desde `src/index.ts`
-- [x] re-export desde `src/browser.ts`
+- [x] tipos core re-exportados desde `src/index.ts`
+- [x] tipos browser re-exportados desde `src/browser.ts`
 
 **Estado de fase:** completada.
 
@@ -221,13 +222,14 @@ Más concretamente:
 - [x] target oficial sobre `Document`
 - [x] uso de `documentElement`
 - [x] discovery one-shot
-- [-] filtro por prefijos por defecto `--color-*`
+- [x] discovery amplio por valor runtime color como default
+- [x] filtros por prefijos para acotar scope cuando el host lo configura
 - [x] soporte de `include`
 - [x] soporte de `exclude`
 - [x] soporte de `match`
 - [x] mapa estable de baseline
 
-**Estado de fase:** iniciada pero no cerrada; la implementación actual no está completamente alineada con el default contractual de v1.
+**Estado de fase:** completada para el contrato vigente de discovery amplio; queda documentar y testear explícitamente que `prefixes` acota el scope.
 
 ---
 
@@ -386,7 +388,7 @@ Más concretamente:
 
 ## Fase 17 — Validación con `npm pack`
 
-- [x] correr `npm pack`
+- [x] correr `npm pack --dry-run`
 - [x] inspeccionar tarball
 - [x] verificar que `examples/` no se publique
 - [x] verificar `exports` y `types`
@@ -409,20 +411,19 @@ Más concretamente:
 
 La siguiente fase lógica del proyecto es:
 
-### **Hardening pre-release**
+### **Release checklist**
 
 Motivo:
 
-- aunque `npm pack` ya fue validado, todavía hay desalineaciones entre spec, tests y código en puntos de contrato público
-- publicar sin corregir esos puntos fijaría una API/comportamiento v1 equivocado
-- los siguientes gaps reales están en hardening contractual, lifecycle del browser y documentación de integración
+- hardening contractual, lifecycle browser, storage, i18n, tests y documentación ya quedaron alineados
+- build, tests, typecheck, lint, smoke real y `npm pack --dry-run` pasan
+- lo pendiente ya no es implementación técnica, sino checklist operativo de release/publicación
 
 Después de eso, la prioridad correcta sería:
 
-1. release checklist
-2. publicación efectiva
-3. mantenimiento post-v1
-4. iteración de v1.x
+1. publicación efectiva
+2. mantenimiento post-v1
+3. iteración de v1.x
 
 ---
 

@@ -50,7 +50,7 @@ function downloadText(content, filename, mimeType) {
 
   setTimeout(() => {
     URL.revokeObjectURL(url)
-  }, 0)
+  }, 1000)
 }
 
 function randomHexColor() {
