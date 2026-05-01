@@ -1,6 +1,6 @@
 # Integration samples
 
-Samples oficiales de integración para `@inume/css-vars-devtools`.
+Samples oficiales de integración para `inume-devtools`.
 
 ## Alcance
 

@@ -1,6 +1,6 @@
 # Vite sample
 
-Integración mínima para un proyecto Vite con `@inume/css-vars-devtools`.
+Integración mínima para un proyecto Vite con `inume-devtools`.
 
 ## Qué muestra
 
@@ -20,7 +20,7 @@ La integración sigue el patrón oficial:
 
 ```ts
 if (import.meta.env.DEV && typeof window !== 'undefined') {
-  const { mountCssVarsDevtool } = await import('@inume/css-vars-devtools/browser')
+  const { mountCssVarsDevtool } = await import('inume-devtools/browser')
   mountCssVarsDevtool({ prefixes: ['--color-'], locale: 'auto', productionGuard: 'strict' })
 }
 ```

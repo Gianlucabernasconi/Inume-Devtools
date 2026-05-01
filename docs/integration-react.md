@@ -21,7 +21,7 @@ export function App() {
         return
       }
 
-      const { mountCssVarsDevtool } = await import('@inume/css-vars-devtools/browser')
+      const { mountCssVarsDevtool } = await import('inume-devtools/browser')
       if (cancelled) {
         return
       }
@@ -52,14 +52,3 @@ export function App() {
 - mantén el import dinámico dentro del efecto
 - destruye el handle en el cleanup del efecto
 - no lo conviertas en un componente productivo del árbol UI
-
----
-
-## Sample del repo
-
-Ver:
-
-- `examples/react/index.html`
-- `examples/react/src/main.jsx`
-- `examples/react/src/App.jsx`
-- `examples/react/src/styles.css`

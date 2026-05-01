@@ -16,7 +16,7 @@
 
 ## Overview
 
-`@inume/css-vars-devtools` is split into two public layers:
+`inume-devtools` is split into two public layers:
 
 1. a **headless core** for discovery, session state, reset, and export
 2. an optional **browser overlay** for dev-only interaction
@@ -160,7 +160,7 @@ These are known architecture-relevant gaps that still need alignment before rele
    - Documentation and tests must keep `prefixes` framed as narrowing filters, not as the default requirement.
 
 2. **Public package surface**
-   - The public API is limited to `@inume/css-vars-devtools` and `@inume/css-vars-devtools/browser`.
+   - The public API is limited to `inume-devtools` and `inume-devtools/browser`.
    - `./package.json` is intentionally not exported to keep the v1 surface strict.
 
 3. **Browser teardown hardening**

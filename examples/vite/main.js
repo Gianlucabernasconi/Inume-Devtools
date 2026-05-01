@@ -6,7 +6,7 @@ app.innerHTML = `
       <p class="eyebrow">Vite sample</p>
       <h1>Dynamic import in dev only</h1>
       <p class="copy">
-        This sample shows the official integration pattern for <code>@inume/css-vars-devtools/browser</code>
+        This sample shows the official integration pattern for <code>inume-devtools/browser</code>
         in a Vite app.
       </p>
       <button class="cta" type="button">Primary action</button>
@@ -15,7 +15,7 @@ app.innerHTML = `
 `
 
 if (import.meta.env.DEV && typeof window !== 'undefined') {
-  const { mountCssVarsDevtool } = await import('@inume/css-vars-devtools/browser')
+  const { mountCssVarsDevtool } = await import('inume-devtools/browser')
 
   mountCssVarsDevtool({
     prefixes: ['--color-'],

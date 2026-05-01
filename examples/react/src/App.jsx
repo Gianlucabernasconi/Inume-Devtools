@@ -10,7 +10,7 @@ export default function App() {
         return
       }
 
-      const { mountCssVarsDevtool } = await import('@inume/css-vars-devtools/browser')
+      const { mountCssVarsDevtool } = await import('inume-devtools/browser')
       if (cancelled) {
         return
       }

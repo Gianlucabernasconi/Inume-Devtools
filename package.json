@@ -1,5 +1,5 @@
 {
-  "name": "@inume/css-vars-devtools",
+  "name": "inume-devtools",
   "version": "0.1.0",
   "description": "Devtool framework-agnostic para editar CSS color variables en runtime.",
   "license": "MIT",
