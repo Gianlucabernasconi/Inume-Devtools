@@ -1,4 +1,4 @@
-# `@inume/css-vars-devtools`
+# `inume-devtools`
 
 ![TypeScript](https://img.shields.io/badge/TypeScript-5.x-3178C6?logo=typescript)
 ![Vitest](https://img.shields.io/badge/tests-vitest-6E9F18?logo=vitest)
@@ -7,7 +7,7 @@
 
 Framework-agnostic developer tool for discovering, editing, previewing, and exporting **runtime CSS color variables**.
 
-> Current status: the package is already functional and documented, but it still has a small set of **pre-release hardening tasks** before v1 should be considered publish-ready.
+> Current status: v1 is already public on npm as [`inume-devtools`](https://www.npmjs.com/package/inume-devtools). This repository is now preparing v1.1.
 
 ---
 
@@ -32,11 +32,11 @@ Framework-agnostic developer tool for discovering, editing, previewing, and expo
 
 ## What it does
 
-`@inume/css-vars-devtools` is built for **development-time iteration**, not for production UI.
+`inume-devtools` is built for **development-time iteration**, not for production UI.
 
 It currently provides:
 
-- one-shot discovery of CSS custom properties from `document.documentElement`
+- one-shot discovery of CSS custom properties from `document.documentElement` and optional scoped selectors
 - filtering by `prefixes`, `include`, `exclude`, and `match`
 - an immutable per-session baseline
 - runtime editing via a headless session API
@@ -59,7 +59,7 @@ This package does **not**:
 
 - rewrite source CSS files
 - parse full authored stylesheets
-- ship framework-specific adapters
+- ship framework-specific adapters beyond the official Next.js convenience entrypoint
 - watch the DOM reactively in v1
 - act as a full design token manager
 - replace host-side dev-only dynamic imports with `productionGuard`
@@ -70,19 +70,20 @@ This package does **not**:
 
 | Entrypoint | Purpose |
 |---|---|
-| `@inume/css-vars-devtools` | Headless session API |
-| `@inume/css-vars-devtools/browser` | Browser overlay on top of the session API |
+| `inume-devtools` | Headless session API |
+| `inume-devtools/browser` | Browser overlay on top of the session API |
+| `inume-devtools/next` | Client Component convenience entrypoint for Next.js |
 
 > No deep imports are supported.
 
-> The intended public API surface for v1 is exactly the two entrypoints above.
+> No deep imports are supported beyond the documented entrypoints.
 
 ---
 
 ## Installation
 
 ```bash
-npm install @inume/css-vars-devtools
+npm install inume-devtools
 ```
 
 ---
@@ -92,7 +93,7 @@ npm install @inume/css-vars-devtools
 ### Headless core
 
 ```ts
-import { createCssVarsSession } from '@inume/css-vars-devtools'
+import { createCssVarsSession } from 'inume-devtools'
 
 const session = createCssVarsSession({
   prefixes: ['--color-'],
@@ -111,7 +112,7 @@ Official integration pattern:
 
 ```ts
 if (import.meta.env.DEV && typeof window !== 'undefined') {
-  const { mountCssVarsDevtool } = await import('@inume/css-vars-devtools/browser')
+  const { mountCssVarsDevtool } = await import('inume-devtools/browser')
 
   mountCssVarsDevtool({
     prefixes: ['--color-'],
@@ -136,6 +137,7 @@ Creates a headless session bound to a `Document` target.
 | Option | Type | Notes |
 |---|---|---|
 | `target` | `Document` | Defaults to the global `document` when available |
+| `scopes` | `string[]` | Additional CSS selectors to scan after `:root` |
 | `prefixes` | `string[]` | Narrows discovery to custom property names with these prefixes |
 | `include` | `string[]` | Exact custom property names to include |
 | `exclude` | `string[]` | Exact custom property names to exclude |
@@ -144,23 +146,34 @@ Creates a headless session bound to a `Document` target.
 
 By default, discovery is broad by runtime value: it includes CSS custom properties whose computed value is recognized as a color. Use `prefixes` when you want to narrow that scope, for example to `['--color-']`.
 
+`scopes` adds selector-based discovery for tokens scoped outside `:root`:
+
+```ts
+const session = createCssVarsSession({
+  scopes: ['.landing', '.dark', '[data-theme="brand"]'],
+  prefixes: ['--color-']
+})
+```
+
+`:root` is always scanned first. `scopes` is still a one-shot snapshot: selectors added later to the DOM are not discovered automatically.
+
 #### Session methods
 
 | Method | Description |
 |---|---|
 | `getVars()` | Returns a fresh, lexicographically sorted snapshot |
-| `getVar(name)` | Returns one variable or `undefined` |
-| `setVar(name, value)` | Updates in-memory state and the DOM target |
-| `resetVar(name)` | Restores a single variable to the session baseline |
+| `getVar(name, options?)` | Returns one variable or `undefined` |
+| `setVar(name, value, options?)` | Updates in-memory state and the DOM target |
+| `resetVar(name, options?)` | Restores a single variable to the session baseline |
 | `resetAll()` | Restores the full scope to baseline |
-| `exportCss()` | Returns a stable `:root { ... }` block |
+| `exportCss()` | Returns stable CSS grouped by selector |
 | `exportJson()` | Returns a stable JSON export schema string |
 | `destroy()` | Leaves the session inert and idempotent |
 
 #### Example
 
 ```ts
-import { createCssVarsSession } from '@inume/css-vars-devtools'
+import { createCssVarsSession } from 'inume-devtools'
 
 const session = createCssVarsSession({ include: ['--color-brand'] })
 
@@ -168,6 +181,20 @@ console.log(session.getVars())
 
 session.setVar('--color-brand', 'rgb(139 92 246 / 1)')
 session.resetVar('--color-brand')
+
+session.setVar('--color-brand', '#111827', { scope: '.dark' })
+```
+
+Scoped exports are grouped by selector:
+
+```css
+:root {
+  --color-primary: #4f46e5;
+}
+
+.dark {
+  --color-primary: #ffffff;
+}
 ```
 
 ---
@@ -203,8 +230,8 @@ Mounts the optional browser overlay.
 #### Example
 
 ```ts
-import { createCssVarsSession } from '@inume/css-vars-devtools'
-import { mountCssVarsDevtool } from '@inume/css-vars-devtools/browser'
+import { createCssVarsSession } from 'inume-devtools'
+import { mountCssVarsDevtool } from 'inume-devtools/browser'
 
 const session = createCssVarsSession({ prefixes: ['--color-'] })
 
@@ -216,6 +243,48 @@ const handle = mountCssVarsDevtool({
 })
 
 handle.show()
+```
+
+---
+
+## Next.js
+
+Use the official convenience Client Component from `inume-devtools/next`:
+
+```tsx
+import { InumeDevtools } from 'inume-devtools/next'
+
+export default function RootLayout({ children }: { children: React.ReactNode }) {
+  return (
+    <html lang="en">
+      <body>
+        {children}
+        {process.env.NODE_ENV === 'development' ? (
+          <InumeDevtools scopes={['.landing', '.dark']} prefixes={['--color-']} />
+        ) : null}
+      </body>
+    </html>
+  )
+}
+```
+
+The entrypoint is SSR-safe at import time. It mounts the browser overlay only from a client effect and destroys the handle on cleanup.
+
+---
+
+## pnpm monorepos
+
+Install the package in the workspace that runs the web app, not necessarily in the monorepo root:
+
+```bash
+pnpm --filter web add -D inume-devtools
+```
+
+Alternative:
+
+```bash
+cd web
+pnpm add -D inume-devtools
 ```
 
 ---
@@ -249,18 +318,6 @@ Loopback hosts accepted by `strict`:
 
 ---
 
-## Known pre-release gaps
-
-The project is functional, but these points are still being hardened before release:
-
-- documentation and tests must keep discovery broad by runtime color value as the default contract
-- browser teardown still needs final cleanup hardening for some global listeners/lifecycle paths
-- some overlay status messages are not fully localized yet
-- the React integration guidance should always destroy the mounted handle on cleanup
-- the overlay works well today, but some hot interaction paths still have performance headroom
-
----
-
 ## Supported formats
 
 ### Exportable today
@@ -287,6 +344,7 @@ If `allowRaw: true` is enabled, the session can keep non-exportable values in me
 | Vanilla | `examples/vanilla/` | Manual validation + smoke test base |
 | Vite | `examples/vite/` | Minimal dev-only dynamic import guide |
 | React | `examples/react/` | `useEffect` + dynamic import guide |
+| Next.js | `docs/integration-next.md` | Official `inume-devtools/next` Client Component guide |
 | Nuxt | `examples/nuxt/` | `.client` plugin integration guide |
 
 Related docs:
@@ -294,6 +352,7 @@ Related docs:
 - [`docs/integration-vanilla.md`](docs/integration-vanilla.md)
 - [`docs/integration-vite.md`](docs/integration-vite.md)
 - [`docs/integration-react.md`](docs/integration-react.md)
+- [`docs/integration-next.md`](docs/integration-next.md)
 - [`docs/integration-nuxt.md`](docs/integration-nuxt.md)
 
 ---

@@ -65,7 +65,7 @@ export function createOverlay(options: OverlayOptions): OverlayController {
   let destroyed = false
   let visible = false
   let search = ''
-  let selectedName: string | undefined
+  let selectedKey: string | undefined
   let statusText = messages.ready
   let panelPosition: PersistedPanelPosition | undefined = options.initialPanelPosition
   let dragState:
@@ -221,28 +221,48 @@ export function createOverlay(options: OverlayOptions): OverlayController {
       return items
     }
 
-    return items.filter((item) => item.name.toLowerCase().includes(query))
+    return items.filter((item) => item.name.toLowerCase().includes(query) || item.scope.toLowerCase().includes(query))
   }
 
   function ensureSelection(items: CssVarItem[]): void {
     if (items.length === 0) {
-      selectedName = undefined
+      selectedKey = undefined
       return
     }
 
-    if (selectedName && items.some((item) => item.name === selectedName)) {
+    if (selectedKey && items.some((item) => item.key === selectedKey)) {
       return
     }
 
-    selectedName = items[0]?.name
+    selectedKey = items[0]?.key
   }
 
   function getSelectedItem(items: CssVarItem[]): CssVarItem | undefined {
-    if (!selectedName) {
+    if (!selectedKey) {
       return undefined
     }
 
-    return items.find((item) => item.name === selectedName)
+    return items.find((item) => item.key === selectedKey)
+  }
+
+  function setSelectedVar(value: string): CssVarItem | undefined {
+    const selectedItem = getSelectedItem(session.getVars())
+    if (!selectedItem) {
+      return undefined
+    }
+
+    session.setVar(selectedItem.name, value, { scope: selectedItem.scope })
+    return selectedItem
+  }
+
+  function resetSelectedVar(): CssVarItem | undefined {
+    const selectedItem = getSelectedItem(session.getVars())
+    if (!selectedItem) {
+      return undefined
+    }
+
+    session.resetVar(selectedItem.name, { scope: selectedItem.scope })
+    return selectedItem
   }
 
   function toHexColor(value: string): string | undefined {
@@ -356,15 +376,19 @@ export function createOverlay(options: OverlayOptions): OverlayController {
   }
 
   function commitPickerColor(renderAfterCommit = false): void {
-    if (destroyed || !selectedName || !colorInput || !pickerState) {
+    if (destroyed || !selectedKey || !colorInput || !pickerState) {
       return
     }
 
     const nextHex = hslToHex(pickerState.h, pickerState.s, pickerState.l)
     colorInput.value = nextHex.slice(1)
-    session.setVar(selectedName, nextHex)
-    statusText = formatMessage(messages.updated, { name: selectedName })
-    updateSelectedColorUi(selectedName, nextHex)
+    const selectedItem = setSelectedVar(nextHex)
+    if (!selectedItem) {
+      return
+    }
+
+    statusText = formatMessage(messages.updated, { name: selectedItem.name })
+    updateSelectedColorUi(selectedItem.name, nextHex)
 
     if (renderAfterCommit) {
       render()
@@ -485,6 +509,7 @@ export function createOverlay(options: OverlayOptions): OverlayController {
 
     const nextHex = toHexColor(selectedItem.value)
     selectedNameElement.textContent = selectedItem.name
+    selectedNameElement.title = selectedItem.scope === ':root' ? selectedItem.name : `${selectedItem.name} (${selectedItem.scope})`
     selectedValueElement.textContent = selectedItem.value
     swatchElement.style.setProperty('--swatch-fill', selectedItem.value)
     colorInput.value = nextHex ? nextHex.slice(1) : selectedItem.value.replace(/^#/, '')
@@ -525,14 +550,14 @@ export function createOverlay(options: OverlayOptions): OverlayController {
     for (const item of items) {
       const row = currentDocument.createElement('div')
       row.className = 'row-button'
-      if (item.name === selectedName) {
+      if (item.key === selectedKey) {
         row.classList.add('is-selected')
       }
 
       const selectBtn = currentDocument.createElement('button')
       selectBtn.type = 'button'
       selectBtn.className = 'row-select'
-      selectBtn.dataset.varName = item.name
+      selectBtn.dataset.varKey = item.key
 
       const swatch = currentDocument.createElement('span')
       swatch.className = 'row-swatch'
@@ -540,7 +565,8 @@ export function createOverlay(options: OverlayOptions): OverlayController {
 
       const name = currentDocument.createElement('span')
       name.className = 'row-name'
-      name.textContent = item.name
+      name.textContent = item.scope === ':root' ? item.name : `${item.name} · ${item.scope}`
+      name.title = item.scope === ':root' ? item.name : `${item.name} (${item.scope})`
 
       selectBtn.append(swatch, name)
 
@@ -781,7 +807,7 @@ export function createOverlay(options: OverlayOptions): OverlayController {
     colorInput.autocomplete = 'off'
     colorInput.autocapitalize = 'off'
     colorInput.addEventListener('change', () => {
-      if (!selectedName) {
+      if (!selectedKey) {
         return
       }
 
@@ -793,8 +819,12 @@ export function createOverlay(options: OverlayOptions): OverlayController {
       }
 
       pickerState = hexToHsl(nextHex)
-      session.setVar(selectedName, nextHex)
-      statusText = formatMessage(messages.updated, { name: selectedName })
+      const selectedItem = setSelectedVar(nextHex)
+      if (!selectedItem) {
+        return
+      }
+
+      statusText = formatMessage(messages.updated, { name: selectedItem.name })
       render()
       options.onCommit?.('change', { panelPosition })
     })
@@ -892,12 +922,16 @@ export function createOverlay(options: OverlayOptions): OverlayController {
     resetButton.className = 'ghost-button'
     resetButton.append(createIcon(currentDocument, 'reset'), currentDocument.createTextNode(messages.reset))
     resetButton.addEventListener('click', () => {
-      if (!selectedName) {
+      if (!selectedKey) {
         return
       }
 
-      session.resetVar(selectedName)
-      statusText = formatMessage(messages.resetDone, { name: selectedName })
+      const selectedItem = resetSelectedVar()
+      if (!selectedItem) {
+        return
+      }
+
+      statusText = formatMessage(messages.resetDone, { name: selectedItem.name })
       render()
       options.onCommit?.('reset', { panelPosition })
     })
@@ -953,13 +987,14 @@ export function createOverlay(options: OverlayOptions): OverlayController {
 
       const target = event.target
       const selectBtn = target instanceof Element ? target.closest<HTMLButtonElement>('.row-select') : null
-      const nextName = selectBtn?.dataset.varName
-      if (!nextName) {
+      const nextKey = selectBtn?.dataset.varKey
+      if (!nextKey) {
         return
       }
 
-      selectedName = nextName
-      statusText = formatMessage(messages.selected, { name: nextName })
+      selectedKey = nextKey
+      const selectedItem = getSelectedItem(session.getVars())
+      statusText = formatMessage(messages.selected, { name: selectedItem?.name ?? nextKey })
       render()
     })
 

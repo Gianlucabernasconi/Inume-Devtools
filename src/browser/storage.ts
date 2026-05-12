@@ -56,8 +56,9 @@ export function createStorageController({ options, session, currentWindow }: Sto
   const restoredState = safeReadState(storage, key)
 
   if (restoredState) {
-    for (const [name, value] of Object.entries(restoredState.vars).filter(([, value]) => isPersistableValue(value))) {
-      session.setVar(name, value)
+    for (const [key, value] of Object.entries(restoredState.vars).filter(([, value]) => isPersistableValue(value))) {
+      const scopedVar = decodePersistedVarKey(key)
+      session.setVar(scopedVar.name, value, { scope: scopedVar.scope })
     }
   }
 
@@ -180,11 +181,17 @@ function buildScopeSignature(options: CssVarsDevtoolOptions): string {
   }
 
   const prefixes = normalizeList(options.prefixes)
+  const scopes = normalizeList(options.scopes)
   const include = normalizeList(options.include)
   const exclude = normalizeList(options.exclude)
 
   return encodeURIComponent(
-    [`prefixes=${prefixes.join(',') || 'runtime-color'}`, `include=${include.join(',') || '-'}`, `exclude=${exclude.join(',') || '-'}`].join('|')
+    [
+      `prefixes=${prefixes.join(',') || 'runtime-color'}`,
+      `scopes=${scopes.join(',') || ':root'}`,
+      `include=${include.join(',') || '-'}`,
+      `exclude=${exclude.join(',') || '-'}`
+    ].join('|')
   )
 }
 
@@ -234,8 +241,24 @@ function isValidState(value: unknown): value is PersistedOverlayState {
 function buildPersistedState(items: CssVarItem[], panelPosition?: PersistedPanelPosition): PersistedOverlayState {
   return {
     version: STORAGE_SCHEMA_VERSION,
-    vars: Object.fromEntries(items.filter((item) => item.exportable && item.value !== item.baselineValue).map((item) => [item.name, item.value])),
+    vars: Object.fromEntries(items.filter((item) => item.exportable && item.value !== item.baselineValue).map((item) => [encodePersistedVarKey(item), item.value])),
     panelPosition
+  }
+}
+
+function encodePersistedVarKey(item: CssVarItem): string {
+  return item.scope === ':root' ? item.name : `${item.scope}\n${item.name}`
+}
+
+function decodePersistedVarKey(key: string): { scope?: string; name: string } {
+  const separatorIndex = key.lastIndexOf('\n')
+  if (separatorIndex === -1) {
+    return { name: key }
+  }
+
+  return {
+    scope: key.slice(0, separatorIndex),
+    name: key.slice(separatorIndex + 1)
   }
 }
 

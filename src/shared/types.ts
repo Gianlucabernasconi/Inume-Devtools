@@ -49,6 +49,7 @@ export interface CssVarsStorageOptions {
 
 export interface CssVarsSessionOptions {
   target?: Document
+  scopes?: string[]
   prefixes?: string[]
   include?: string[]
   exclude?: string[]
@@ -56,8 +57,14 @@ export interface CssVarsSessionOptions {
   allowRaw?: boolean
 }
 
+export interface CssVarsScopedOperationOptions {
+  scope?: string
+}
+
 export interface CssVarItem {
+  key: string
   name: string
+  scope: string
   value: string
   baselineValue: string
   exportable: boolean
@@ -66,9 +73,9 @@ export interface CssVarItem {
 
 export interface CssVarsSession {
   getVars(): CssVarItem[]
-  getVar(name: string): CssVarItem | undefined
-  setVar(name: string, value: string): void
-  resetVar(name: string): void
+  getVar(name: string, options?: CssVarsScopedOperationOptions): CssVarItem | undefined
+  setVar(name: string, value: string, options?: CssVarsScopedOperationOptions): void
+  resetVar(name: string, options?: CssVarsScopedOperationOptions): void
   resetAll(): void
   exportCss(): string
   exportJson(): string

@@ -102,6 +102,29 @@ describe('browser overlay', () => {
     expect(document.documentElement.style.getPropertyValue('--color-base').trim()).toBe('#0f172a')
   })
 
+  it('muestra scopes adicionales y edita el elemento scoped correcto', () => {
+    const landing = document.createElement('main')
+    landing.className = 'landing'
+    landing.style.setProperty('--color-base', '#334455')
+    document.body.append(landing)
+
+    mountCssVarsDevtool({ productionGuard: 'off', defaultOpen: true, scopes: ['.landing'] })
+
+    const { shadowRoot } = getOverlayParts()
+    const scopedRow = Array.from(shadowRoot.querySelectorAll('.row-button')).find((row) => row.textContent?.includes('.landing')) as HTMLDivElement
+    expect(scopedRow).toBeDefined()
+
+    const scopedSelect = scopedRow.querySelector('.row-select') as HTMLButtonElement
+    scopedSelect.click()
+
+    const colorInput = shadowRoot.querySelector('.editor .editor-text-input') as HTMLInputElement
+    colorInput.value = '#000000'
+    colorInput.dispatchEvent(new Event('change', { bubbles: true }))
+
+    expect(landing.style.getPropertyValue('--color-base').trim()).toBe('#000000')
+    expect(document.documentElement.style.getPropertyValue('--color-base').trim()).toBe('#0f172a')
+  })
+
   it('resetea todas las variables y copia CSS sin romper el overlay', async () => {
     const writeText = vi.fn().mockResolvedValue(undefined)
     Object.defineProperty(window.navigator, 'clipboard', {

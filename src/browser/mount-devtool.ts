@@ -38,6 +38,7 @@ function hasSessionOptionMix(options: CssVarsDevtoolOptions): boolean {
 
   return (
     candidate.target !== undefined ||
+    candidate.scopes !== undefined ||
     candidate.prefixes !== undefined ||
     candidate.include !== undefined ||
     candidate.exclude !== undefined ||
@@ -49,6 +50,7 @@ function hasSessionOptionMix(options: CssVarsDevtoolOptions): boolean {
 function pickSessionOptions(options: CssVarsDevtoolOptions): CssVarsSessionOptions {
   return {
     target: 'target' in options ? options.target : undefined,
+    scopes: 'scopes' in options ? options.scopes : undefined,
     prefixes: 'prefixes' in options ? options.prefixes : undefined,
     include: 'include' in options ? options.include : undefined,
     exclude: 'exclude' in options ? options.exclude : undefined,

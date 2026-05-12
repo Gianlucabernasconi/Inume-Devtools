@@ -1,4 +1,4 @@
-# `@inume/css-vars-devtools` - Especificación Final v1
+# `inume-devtools` - Especificación v1/v1.1
 
 > **Estado de vigencia:** este documento fue actualizado para reflejar el comportamiento real actual del repo.
 >
@@ -15,7 +15,7 @@
   - [5.2 Boundary de capas](#52-boundary-de-capas)
   - [5.3 Entrypoints públicos](#53-entrypoints-públicos)
 - [6. Invariantes funcionales](#6-invariantes-funcionales)
-- [7. Semántica de target](#7-semántica-de-target)
+- [7. Semántica de target y scopes](#7-semántica-de-target-y-scopes)
 - [8. Discovery](#8-discovery)
   - [8.1 Flujo](#81-flujo)
   - [8.2 Reglas de inclusión](#82-reglas-de-inclusión)
@@ -54,12 +54,13 @@
 
 ## 1. Producto
 
-`@inume/css-vars-devtools` será una librería npm pública, **framework-agnostic**, enfocada en editar en tiempo real **CSS custom properties de color** durante desarrollo.
+`inume-devtools` es una librería npm pública, **framework-agnostic**, enfocada en editar en tiempo real **CSS custom properties de color** durante desarrollo.
 
-Tendrá dos entrypoints públicos:
+v1.1 tiene tres entrypoints públicos:
 
-- `@inume/css-vars-devtools`
-- `@inume/css-vars-devtools/browser`
+- `inume-devtools`
+- `inume-devtools/browser`
+- `inume-devtools/next`
 
 Su propuesta de valor es:
 
@@ -94,7 +95,7 @@ La v1 **no** busca:
 - preservar el CSS authored original
 - editar archivos `.css`, `.scss` o `theme.ts`
 - parsear ni reescribir hojas de estilo completas
-- ofrecer adapters oficiales por framework
+- ofrecer adapters oficiales por framework, salvo el entrypoint mínimo `inume-devtools/next` introducido en v1.1 por onboarding
 - incluir callbacks ni event bus
 - incluir sync con Figma ni export a otros formatos complejos
 - soportar perfectamente toda la semántica avanzada de CSS Color 5
@@ -228,8 +229,9 @@ Restricción:
 
 ### 5.3 Entrypoints públicos
 
-- `@inume/css-vars-devtools` expone el **core headless**
-- `@inume/css-vars-devtools/browser` expone el **overlay visual** y usa internamente el core
+- `inume-devtools` expone el **core headless**
+- `inume-devtools/browser` expone el **overlay visual** y usa internamente el core
+- `inume-devtools/next` expone un **Client Component** mínimo para Next.js
 - no habrá **deep imports** soportados
 
 ---
@@ -253,19 +255,21 @@ Restricción:
 
 ---
 
-## 7. Semántica de target
+## 7. Semántica de target y scopes
 
 Se usará una sola opción pública: `target`.
 
 Reglas:
 
-- en v1, el target soportado oficialmente es `Document`
+- el target soportado oficialmente sigue siendo `Document`
 - si `target` se omite y existe `document` global, el paquete usará ese `document`
-- el paquete leerá y escribirá sobre `target.documentElement`
+- el paquete siempre escanea `target.documentElement` como `:root`
+- v1.1 permite `scopes: string[]` para escanear selectores CSS adicionales
+- las variables descubiertas en un scope adicional se escriben sobre el elemento que matcheó ese selector
 - si no existe un `Document` resolvible al crear la sesión, `createCssVarsSession()` debe fallar con un error claro
 - no habrá `readTarget` y `writeTarget` separados en v1
 
-Los targets `HTMLElement` quedan fuera del soporte oficial cerrado de v1 para evitar ambigüedad en export y persistencia.
+Los targets `HTMLElement` quedan fuera del soporte oficial para evitar ambigüedad en export y persistencia. Para tokens scoped, usar `scopes`.
 
 ---
 
@@ -276,8 +280,8 @@ Los targets `HTMLElement` quedan fuera del soporte oficial cerrado de v1 para ev
 El proceso de discovery debe:
 
 1. resolver el target efectivo
-2. ejecutar `getComputedStyle(targetEfectivo)` una sola vez al crear la sesión
-3. iterar las custom properties disponibles en ese snapshot
+2. ejecutar `getComputedStyle()` sobre `:root` y cada selector de `scopes` que matchee un elemento
+3. iterar las custom properties disponibles en esos snapshots
 4. filtrar por nombre según reglas de filtrado
 5. construir un mapa estable `name -> baselineValue`
 6. construir el estado actual inicial copiando el baseline
@@ -343,6 +347,7 @@ export interface CssVarsStorageOptions {
 
 export interface CssVarsSessionOptions {
   target?: Document
+  scopes?: string[]
   prefixes?: string[]
   include?: string[]
   exclude?: string[]
@@ -351,7 +356,9 @@ export interface CssVarsSessionOptions {
 }
 
 export interface CssVarItem {
+  key: string
   name: string
+  scope: string
   value: string
   baselineValue: string
   exportable: boolean

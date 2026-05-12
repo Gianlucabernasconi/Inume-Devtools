@@ -1,6 +1,6 @@
 {
   "name": "inume-devtools",
-  "version": "0.1.0",
+  "version": "1.1.0",
   "description": "Devtool framework-agnostic para editar CSS color variables en runtime.",
   "license": "MIT",
   "type": "module",
@@ -18,6 +18,11 @@
       "types": "./dist/browser.d.ts",
       "import": "./dist/browser.js",
       "require": "./dist/browser.cjs"
+    },
+    "./next": {
+      "types": "./dist/next.d.ts",
+      "import": "./dist/next.js",
+      "require": "./dist/next.cjs"
     }
   },
   "files": [
@@ -26,7 +31,7 @@
     "LICENSE"
   ],
   "scripts": {
-    "build": "tsup",
+    "build": "tsup && node scripts/prepend-next-client.mjs",
     "dev": "node scripts/dev-server.mjs",
     "test": "vitest run",
     "test:watch": "vitest",
@@ -36,14 +41,24 @@
     "lint:fix": "eslint . --fix"
   },
   "devDependencies": {
+    "@types/react": "^19.2.2",
     "@typescript-eslint/eslint-plugin": "^8.46.1",
     "@typescript-eslint/parser": "^8.46.1",
     "eslint": "^9.38.0",
     "eslint-plugin-security": "^3.0.1",
     "happy-dom": "^20.0.10",
     "playwright": "^1.55.0",
+    "react": "^19.2.0",
     "tsup": "^8.5.0",
     "typescript": "^5.9.3",
     "vitest": "^3.2.4"
+  },
+  "peerDependencies": {
+    "react": ">=18.2.0 || >=19.0.0"
+  },
+  "peerDependenciesMeta": {
+    "react": {
+      "optional": true
+    }
   }
 }

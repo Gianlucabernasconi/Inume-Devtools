@@ -18,8 +18,18 @@ function resolveTargetDocument(target?: Document): Document {
 
 export interface DiscoveryResult {
   target: Document
-  baseline: Map<string, string>
+  entries: Map<string, DiscoveryEntry>
 }
+
+export interface DiscoveryEntry {
+  key: string
+  name: string
+  scope: string
+  element: Element
+  baselineValue: string
+}
+
+const ROOT_SCOPE = ':root'
 
 export function discoverVars(options: CssVarsSessionOptions = {}): DiscoveryResult {
   const target = resolveTargetDocument(options.target)
@@ -34,28 +44,39 @@ export function discoverVars(options: CssVarsSessionOptions = {}): DiscoveryResu
     throw new Error('createCssVarsSession() requiere getComputedStyle disponible.')
   }
 
-  const computedStyle = getComputedStyleFn(root)
   const filters = resolveFilters(options)
-  const baseline = new Map<string, string>()
+  const entries = new Map<string, DiscoveryEntry>()
+  const scopedElements = resolveScopedElements(target, root, options.scopes)
 
   try {
-    for (let index = 0; index < computedStyle.length; index += 1) {
-      const rawName = computedStyle.item(index)
+    for (const scopedElement of scopedElements) {
+      const computedStyle = getComputedStyleFn(scopedElement.element)
 
-      // Only real custom properties belong to the session scope.
-      if (!rawName.trim().startsWith('--')) {
-        continue
+      for (let index = 0; index < computedStyle.length; index += 1) {
+        const rawName = computedStyle.item(index)
+
+        // Only real custom properties belong to the session scope.
+        if (!rawName.trim().startsWith('--')) {
+          continue
+        }
+
+        const name = normalizeCustomPropertyName(rawName)
+        const runtimeValue = normalizeColorValue(computedStyle.getPropertyValue(rawName))
+        const validation = validateExportableValue(runtimeValue)
+
+        if (!name || !validation.editableAsColor || !shouldIncludeName(name, filters)) {
+          continue
+        }
+
+        const key = createScopedVarKey(scopedElement.scope, name)
+        entries.set(key, {
+          key,
+          name,
+          scope: scopedElement.scope,
+          element: scopedElement.element,
+          baselineValue: validation.normalizedValue
+        })
       }
-
-      const name = normalizeCustomPropertyName(rawName)
-      const runtimeValue = normalizeColorValue(computedStyle.getPropertyValue(rawName))
-      const validation = validateExportableValue(runtimeValue)
-
-      if (!name || !validation.editableAsColor || !shouldIncludeName(name, filters)) {
-        continue
-      }
-
-      baseline.set(name, validation.normalizedValue)
     }
   } catch (error) {
     if (error instanceof Error) {
@@ -65,5 +86,31 @@ export function discoverVars(options: CssVarsSessionOptions = {}): DiscoveryResu
     throw error
   }
 
-  return { target, baseline }
+  return { target, entries }
+}
+
+export function createScopedVarKey(scope: string, name: string): string {
+  return scope === ROOT_SCOPE ? name : `${scope}\n${name}`
+}
+
+function resolveScopedElements(target: Document, root: Element, scopes: string[] | undefined): Array<{ scope: string; element: Element }> {
+  const scopedElements: Array<{ scope: string; element: Element }> = [{ scope: ROOT_SCOPE, element: root }]
+
+  for (const scope of scopes ?? []) {
+    const selector = scope.trim()
+    if (!selector || selector === ROOT_SCOPE) {
+      continue
+    }
+
+    try {
+      const element = target.querySelector(selector)
+      if (element) {
+        scopedElements.push({ scope: selector, element })
+      }
+    } catch {
+      // Invalid optional scopes should not prevent the base :root session from mounting.
+    }
+  }
+
+  return scopedElements
 }

@@ -1,45 +1,85 @@
-import { discoverVars } from './discover-vars'
+import { createScopedVarKey, discoverVars, type DiscoveryEntry } from './discover-vars'
 import { normalizeCustomPropertyName } from '../shared/normalize-name'
 import { serializeCss } from '../shared/serialize-css'
 import { serializeJson } from '../shared/serialize-json'
 import { validateExportableValue } from '../shared/validate-exportable-value'
-import type { CssVarItem, CssVarsSession, CssVarsSessionOptions } from '../shared/types'
+import type { CssVarItem, CssVarsScopedOperationOptions, CssVarsSession, CssVarsSessionOptions } from '../shared/types'
 
-function toCssVarItem(name: string, value: string, baselineValue: string): CssVarItem {
+function toCssVarItem(entry: DiscoveryEntry, value: string): CssVarItem {
   const validation = validateExportableValue(value)
 
   return {
-    name,
+    key: entry.key,
+    name: entry.name,
+    scope: entry.scope,
     value,
-    baselineValue,
+    baselineValue: entry.baselineValue,
     exportable: validation.exportable,
     editableAsColor: validation.editableAsColor
   }
 }
 
-function getOrderedNames(values: Map<string, string>): string[] {
-  return [...values.keys()].sort((left, right) => left.localeCompare(right))
+function getOrderedKeys(entries: Map<string, DiscoveryEntry>): string[] {
+  return [...entries.values()]
+    .sort((left, right) => compareScopes(left.scope, right.scope) || left.name.localeCompare(right.name))
+    .map((entry) => entry.key)
+}
+
+function compareScopes(left: string, right: string): number {
+  if (left === right) {
+    return 0
+  }
+
+  if (left === ':root') {
+    return -1
+  }
+
+  if (right === ':root') {
+    return 1
+  }
+
+  return left.localeCompare(right)
 }
 
 export function createCssVarsSession(options: CssVarsSessionOptions = {}): CssVarsSession {
-  const { target, baseline } = discoverVars(options)
-  const current = new Map(baseline)
+  const { entries } = discoverVars(options)
+  const current = new Map([...entries].map(([key, entry]) => [key, entry.baselineValue]))
   const allowRaw = options.allowRaw === true
   let destroyed = false
 
-  function setDomValue(name: string, value: string): void {
-    target.documentElement.style.setProperty(name, value)
+  function setDomValue(entry: DiscoveryEntry, value: string): void {
+    if (entry.element instanceof HTMLElement || entry.element instanceof SVGElement) {
+      entry.element.style.setProperty(entry.name, value)
+    }
   }
 
-  function getItem(name: string): CssVarItem | undefined {
-    const value = current.get(name)
-    const baselineValue = baseline.get(name)
+  function getItem(key: string): CssVarItem | undefined {
+    const entry = entries.get(key)
+    const value = current.get(key)
 
-    if (value === undefined || baselineValue === undefined) {
+    if (!entry || value === undefined) {
       return undefined
     }
 
-    return toCssVarItem(name, value, baselineValue)
+    return toCssVarItem(entry, value)
+  }
+
+  function resolveKey(name: string, operationOptions?: CssVarsScopedOperationOptions): string | undefined {
+    const normalizedName = normalizeCustomPropertyName(name)
+    if (!normalizedName) {
+      return undefined
+    }
+
+    const requestedScope = operationOptions?.scope?.trim()
+    if (requestedScope) {
+      return entries.has(createScopedVarKey(requestedScope, normalizedName)) ? createScopedVarKey(requestedScope, normalizedName) : undefined
+    }
+
+    if (entries.has(normalizedName)) {
+      return normalizedName
+    }
+
+    return getOrderedKeys(entries).find((key) => entries.get(key)?.name === normalizedName)
   }
 
   return {
@@ -48,27 +88,28 @@ export function createCssVarsSession(options: CssVarsSessionOptions = {}): CssVa
         return []
       }
 
-      return getOrderedNames(current)
-        .map((name) => getItem(name))
+      return getOrderedKeys(entries)
+        .map((key) => getItem(key))
         .filter((item): item is CssVarItem => Boolean(item))
     },
 
-    getVar(name) {
+    getVar(name, operationOptions) {
       if (destroyed) {
         return undefined
       }
 
-      const normalizedName = normalizeCustomPropertyName(name)
-      return normalizedName ? getItem(normalizedName) : undefined
+      const key = resolveKey(name, operationOptions)
+      return key ? getItem(key) : undefined
     },
 
-    setVar(name, value) {
+    setVar(name, value, operationOptions) {
       if (destroyed) {
         return
       }
 
-      const normalizedName = normalizeCustomPropertyName(name)
-      if (!normalizedName || !current.has(normalizedName)) {
+      const key = resolveKey(name, operationOptions)
+      const entry = key ? entries.get(key) : undefined
+      if (!key || !entry || !current.has(key)) {
         return
       }
 
@@ -77,27 +118,23 @@ export function createCssVarsSession(options: CssVarsSessionOptions = {}): CssVa
         return
       }
 
-      current.set(normalizedName, validation.normalizedValue)
-      setDomValue(normalizedName, validation.normalizedValue)
+      current.set(key, validation.normalizedValue)
+      setDomValue(entry, validation.normalizedValue)
     },
 
-    resetVar(name) {
+    resetVar(name, operationOptions) {
       if (destroyed) {
         return
       }
 
-      const normalizedName = normalizeCustomPropertyName(name)
-      if (!normalizedName) {
+      const key = resolveKey(name, operationOptions)
+      const entry = key ? entries.get(key) : undefined
+      if (!key || !entry) {
         return
       }
 
-      const baselineValue = baseline.get(normalizedName)
-      if (baselineValue === undefined) {
-        return
-      }
-
-      current.set(normalizedName, baselineValue)
-      setDomValue(normalizedName, baselineValue)
+      current.set(key, entry.baselineValue)
+      setDomValue(entry, entry.baselineValue)
     },
 
     resetAll() {
@@ -105,9 +142,9 @@ export function createCssVarsSession(options: CssVarsSessionOptions = {}): CssVa
         return
       }
 
-      for (const [name, baselineValue] of baseline) {
-        current.set(name, baselineValue)
-        setDomValue(name, baselineValue)
+      for (const [key, entry] of entries) {
+        current.set(key, entry.baselineValue)
+        setDomValue(entry, entry.baselineValue)
       }
     },
 
@@ -116,17 +153,18 @@ export function createCssVarsSession(options: CssVarsSessionOptions = {}): CssVa
         return ''
       }
 
-      const exportableVars = getOrderedNames(current)
-        .map((name) => {
-          const value = current.get(name)
-          if (value === undefined) {
+      const exportableVars = getOrderedKeys(entries)
+        .map((key) => {
+          const entry = entries.get(key)
+          const value = current.get(key)
+          if (!entry || value === undefined) {
             return undefined
           }
 
           const validation = validateExportableValue(value)
-          return validation.exportable ? { name, value: validation.normalizedValue } : undefined
+          return validation.exportable ? { name: entry.name, scope: entry.scope, value: validation.normalizedValue } : undefined
         })
-        .filter((item): item is { name: string; value: string } => Boolean(item))
+        .filter((item): item is { name: string; scope: string; value: string } => Boolean(item))
 
       return serializeCss(exportableVars)
     },
@@ -136,17 +174,18 @@ export function createCssVarsSession(options: CssVarsSessionOptions = {}): CssVa
         return ''
       }
 
-      const exportableVars = getOrderedNames(current)
-        .map((name) => {
-          const value = current.get(name)
-          if (value === undefined) {
+      const exportableVars = getOrderedKeys(entries)
+        .map((key) => {
+          const entry = entries.get(key)
+          const value = current.get(key)
+          if (!entry || value === undefined) {
             return undefined
           }
 
           const validation = validateExportableValue(value)
-          return validation.exportable ? { name, value: validation.normalizedValue } : undefined
+          return validation.exportable ? { name: entry.name, scope: entry.scope, value: validation.normalizedValue } : undefined
         })
-        .filter((item): item is { name: string; value: string } => Boolean(item))
+        .filter((item): item is { name: string; scope: string; value: string } => Boolean(item))
 
       return serializeJson(exportableVars)
     },
@@ -157,8 +196,8 @@ export function createCssVarsSession(options: CssVarsSessionOptions = {}): CssVa
       }
 
       destroyed = true
-      baseline.clear()
       current.clear()
+      entries.clear()
     }
   }
 }

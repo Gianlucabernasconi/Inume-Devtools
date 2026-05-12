@@ -1,6 +1,6 @@
 # Estado actual del proyecto
 
-> Documento operativo para seguir el avance de `@inume/css-vars-devtools`.
+> Documento operativo para seguir el avance de `inume-devtools`.
 >
 > **Regla de uso:** cada vez que se termine una tarea relevante, este archivo debe actualizarse en el mismo cambio o commit.
 
@@ -20,25 +20,23 @@
 
 ## Resumen ejecutivo
 
-**Estado general:** producto funcional con overlay browser real, pero con **hardening pre-release pendiente** antes de publicar v1.
+**Estado general:** v1 ya está publicada en npm como `inume-devtools`; el repo está en `1.1.0` con discovery por scopes, entrypoint Next.js y documentación para monorepos.
 
 El proyecto ya salió de la etapa de documentación-only y hoy tiene:
 
 - scaffold de paquete npm
 - entrypoints públicos definidos
 - core headless funcional
-- discovery one-shot amplio por valor runtime color
+- discovery one-shot amplio por valor runtime color, incluyendo scopes CSS opcionales
 - export CSS/JSON funcional
 - tests dirigidos del core
 - sample `vanilla` en proceso de corrección para reflejar uso real del producto
 - linting y typecheck básicos
 
-Todavía **no** están cerrados del todo:
+Todavía **no** está cerrado del todo para v1.1:
 
-- alineación final de documentación y tests con discovery amplio por valor runtime color
-- publicación final
-- endurecimiento final del sample de prueba para eliminar hardcodes remanentes
-- limpieza final de lifecycle/performance del overlay browser
+- smoke real de navegador contra paquete empaquetado
+- verificación manual en un proyecto Next.js real
 
 ---
 
@@ -86,14 +84,15 @@ Cuando se cierre una tarea importante, actualizar:
 
 ### Etapa real del proyecto
 
-El proyecto está en **fase avanzada de producto**, con el overlay browser ya rediseñado, pero con una tanda de **correcciones contractuales y de hardening** todavía abiertas antes de release.
+El proyecto está en **fase v1.1**, con v1 pública y una tanda de mejoras de adopción ya implementadas de forma aditiva.
 
 Más concretamente:
 
 - **Infraestructura base:** lista
 - **Core headless:** funcional
 - **Browser/UI real:** funcional
-- **Release v1:** cerca en funcionalidad, pero no listo para publicar sin hardening adicional
+- **Release v1:** publicada en https://www.npmjs.com/package/inume-devtools
+- **Release v1.1:** versión local `1.1.0`, con `check`, `lint`, tests dirigidos, build y `npm pack --dry-run` pasando; pendiente smoke real/manual en proyecto host
 
 ### Evidencia actual en el repo
 
@@ -108,18 +107,20 @@ Más concretamente:
 #### Core implementado
 
 - discovery one-shot sobre `Document`
+- soporte opt-in de `scopes: string[]` para descubrir tokens en selectores como `.dark`, `.landing` o `[data-theme="x"]`
 - discovery amplio implementado sobre custom properties reales cuyo valor runtime sea color
 - filtros por `prefixes`, `include`, `exclude`, `match`
 - baseline inmutable por sesión
-- `setVar()`, `resetVar()`, `resetAll()`, `destroy()`
-- `exportCss()` y `exportJson()` desde estado en memoria
+- `setVar()`, `resetVar()`, `resetAll()`, `destroy()` con soporte de scope explícito cuando aplica
+- `exportCss()` y `exportJson()` desde estado en memoria, agrupando por selector cuando hay scopes adicionales
 - validación de valores exportables y soporte raw controlado con `allowRaw`
 
-> **Decisión vigente:** discovery amplio por valor runtime color es el contrato actual. `prefixes` sirve para acotar el scope cuando el host quiere limitarlo, por ejemplo a `--color-*`.
+> **Decisión vigente v1.1:** `:root` sigue siendo el scope base. `scopes` agrega selectores CSS adicionales al snapshot inicial, sin re-scan automático ni observers.
 
 #### Browser implementado
 
-- entry `@inume/css-vars-devtools/browser` existe
+- entry `inume-devtools/browser` existe
+- entry `inume-devtools/next` existe como Client Component SSR-safe para Next.js
 - import SSR-safe e inert al importarse
 - `mountCssVarsDevtool()` existe
 - `productionGuard` base existe
@@ -130,6 +131,7 @@ Más concretamente:
 - tipografías centralizadas en variables CSS (`--font-body`, `--font-mono`)
 - sprite cat (mascota pixel art) integrado solo en el launcher para evitar redundancia visual
 - acción visible `Copy CSS` con feedback contextual
+- overlay distingue variables scoped mostrando el selector junto al nombre cuando corresponde
 - eliminación de elementos superfluos (badge dev-only, grip visual del launcher, título/gato del header y status visible del footer)
 
 > **Hardening verificado del browser:** teardown de listeners globales, drag del launcher/panel/picker y caminos calientes del picker/lista ya fueron endurecidos y validados.
